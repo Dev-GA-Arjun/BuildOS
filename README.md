@@ -21,6 +21,14 @@ The backend includes:
 - SQLAlchemy engine/session wiring (`backend/app/db/session.py`)
 - versioned API router + health endpoint (`backend/app/api/v1/`)
 
+## Step 3 (First Persistent Resource: Task)
+The backend now includes:
+- `Task` SQLAlchemy model and status enum (`backend/app/models.py`)
+- Pydantic schemas for task create/read/update (`backend/app/schemas.py`)
+- CRUD endpoints for tasks (`backend/app/routes/task.py`)
+- Alembic configuration + initial `tasks` migration (`backend/alembic/`, `backend/alembic.ini`)
+- API tests for task CRUD flows (`backend/tests/test_tasks.py`)
+
 ## Local Setup (Backend)
 1. Create and activate a virtual environment.
 2. Install dependencies:
