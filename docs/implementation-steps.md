@@ -30,14 +30,3 @@ A production-friendly skeleton ready for model creation, migrations, and CRUD im
 
 ### Output of Step 3
 Task persistence and API CRUD are now implemented with migration support and endpoint tests.
-
-## Step 4 — Execution and Streak Logic (Completed)
-- [x] Add `DailyExecution` persistent model for date-based check-ins.
-- [x] Implement upsert endpoint for `POST /api/v1/execution/daily-checkin`.
-- [x] Implement `GET /api/v1/execution/streak` with current and best streak calculation.
-- [x] Implement `GET /api/v1/execution/analytics` with completion-rate and 7/30-day stats.
-- [x] Add Alembic migration for `daily_executions` table.
-- [x] Add API tests for check-in, streak, and analytics behavior.
-
-### Output of Step 4
-Daily execution tracking and streak analytics are available with persistent storage, endpoints, and tests.

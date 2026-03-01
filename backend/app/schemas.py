@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -27,30 +27,3 @@ class TaskRead(TaskBase):
     id: int
     created_at: datetime
     updated_at: datetime
-
-
-class DailyCheckinRequest(BaseModel):
-    execution_date: date | None = None
-    completed: bool = True
-
-
-class DailyCheckinRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    execution_date: date
-    completed: bool
-    created_at: datetime
-    updated_at: datetime
-
-
-class StreakRead(BaseModel):
-    current_streak: int
-    best_streak: int
-
-
-class AnalyticsRead(BaseModel):
-    completion_rate: float
-    executed_days_last_7: int
-    executed_days_last_30: int
-    total_checkins: int

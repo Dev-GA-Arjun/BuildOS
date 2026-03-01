@@ -1,7 +1,7 @@
-from datetime import date, datetime
+from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, String, Text, func
+from sqlalchemy import DateTime, Enum, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -24,25 +24,6 @@ class Task(Base):
         default=TaskStatus.TODO,
         nullable=False,
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
-    )
-
-
-class DailyExecution(Base):
-    __tablename__ = "daily_executions"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    execution_date: Mapped[date] = mapped_column(Date, nullable=False, unique=True, index=True)
-    completed: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
