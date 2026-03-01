@@ -12,6 +12,7 @@ The following project docs define product context and MVP scope:
 - `docs/product-brief.md`
 - `docs/mvp-scope.md`
 - `docs/api-spec.md`
+- `docs/implementation-steps.md`
 
 ## Step 2 (Backend Foundation)
 The backend includes:
