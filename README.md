@@ -1,42 +1,39 @@
-# BuildOS – Project Brief
+# BuildOS
 
-## What it is
-BuildOS is a goal-to-execution SaaS that helps students, early-stage builders, and micro-creators turn long-term goals into daily consistent action.
+BuildOS is a goal-to-execution SaaS platform that helps students, early-stage builders, and micro-creators turn long-term goals into consistent daily action.
 
-## Problem
-Most people set goals and consume productivity content but fail in execution due to weak systems. Traditional to-do apps track tasks but don’t connect daily action to long-term vision.
+## Repository Layout
+- `docs/` - product and technical planning docs.
+- `backend/` - FastAPI backend foundation.
+- `frontend/` - frontend app (planned).
 
-## Solution
-BuildOS provides a personal operating system:
-- Goals → systems/plans → tasks → daily execution
-- Progress analytics + streak tracking
-- Structure for consistency, not just motivation
+## Step 1 (Context and Specifications)
+The following project docs define product context and MVP scope:
+- `docs/product-brief.md`
+- `docs/mvp-scope.md`
+- `docs/api-spec.md`
+- `docs/implementation-steps.md`
 
-## MVP Features
-1. User authentication
-2. Goal creation
-3. Systems/plans under goals
-4. Task management
-5. Daily execution tracking
-6. Progress analytics
-7. Streak tracking
-8. Minimal, clean UI
+## Step 2 (Backend Foundation)
+The backend includes:
+- FastAPI application bootstrap (`backend/app/main.py`)
+- environment-based configuration (`backend/app/core/config.py`)
+- SQLAlchemy engine/session wiring (`backend/app/db/session.py`)
+- versioned API router + health endpoint (`backend/app/api/v1/`)
 
-## Tech Stack
-- Backend: FastAPI, SQLAlchemy, Supabase PostgreSQL
-- Auth: JWT (planned)
-- Frontend: React (planned)
-- Deployment: cloud-hosted, production-ready config
-
-## Current Stage
-FastAPI backend is running with docs validated. Next step is connecting to Supabase and implementing production-grade data modeling + CRUD.
-
-## Next Milestones
-1. FastAPI ↔ Supabase connection
-2. SQLAlchemy setup with clean architecture
-3. Real Task table + CRUD APIs
-4. JWT auth
-5. Frontend integration
-
-## Build Philosophy
-This is a serious portfolio/startup-grade project. Focus is on clean architecture, maintainability, and real-world backend engineering standards.
+## Local Setup (Backend)
+1. Create and activate a virtual environment.
+2. Install dependencies:
+   ```bash
+   pip install -r backend/requirements.txt
+   ```
+3. Copy env file and update database URL:
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+4. Run API:
+   ```bash
+   cd backend
+   uvicorn app.main:app --reload
+   ```
+5. Visit docs: `http://127.0.0.1:8000/docs`
