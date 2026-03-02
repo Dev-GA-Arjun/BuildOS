@@ -1,0 +1,250 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import AppLayout from '../components/layout/AppLayout'
+import { useActiveProject, useProjects } from '../hooks/useProjects'
+import styles from './DashboardPage.module.css'
+
+// Generate heatmap data
+function generateHeatmap() {
+  const data = {}
+  const today = new Date()
+  for (let i = 180; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    const key = d.toISOString().split('T')[0]
+    const rand = Math.random()
+    data[key] = rand > 0.6 ? Math.floor(rand * 8) : 0
+  }
+  return data
+}
+
+const heatmapData = generateHeatmap()
+
+function getHeatmapColor(count) {
+  if (count === 0) return 'var(--bg-card)'
+  if (count <= 2) return 'rgba(51,194,40,0.25)'
+  if (count <= 4) return 'rgba(51,194,40,0.5)'
+  if (count <= 6) return 'rgba(51,194,40,0.75)'
+  return '#33C228'
+}
+
+function calcProgress(project) {
+  if (!project?.phases) return 0
+  let total = 0, done = 0
+  project.phases.forEach(p => p.tasks?.forEach(t => {
+    t.subtasks?.forEach(s => {
+      total++
+      if (s.status === 'done') done++
+    })
+  }))
+  return total === 0 ? 0 : Math.round((done / total) * 100)
+}
+
+function calcStreak() {
+  const today = new Date()
+  let streak = 0
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    const key = d.toISOString().split('T')[0]
+    if (heatmapData[key] > 0) streak++
+    else break
+  }
+  return streak
+}
+
+export default function DashboardPage() {
+  const [expandedPhase, setExpandedPhase] = useState(null)
+  const { data: activeProject, isLoading: loadingActive } = useActiveProject()
+  const { data: allProjects, isLoading: loadingProjects } = useProjects()
+
+  const progress = calcProgress(activeProject)
+  const streak = calcStreak()
+  const heatmapDays = Object.entries(heatmapData)
+  const pastProjects = allProjects?.filter(p => p.status !== 'active') || []
+  const completedCount = pastProjects.filter(p => p.status === 'completed').length
+
+  return (
+    <AppLayout>
+      <div className={styles.dashboard}>
+
+        {/* Stats */}
+        <div className={styles.statsRow}>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Current Streak</span>
+            <div className={styles.statValue}>
+              <span className={styles.statNum}>{streak}</span>
+              <span className={styles.statUnit}>days 🔥</span>
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Active Project</span>
+            <div className={styles.statValue}>
+              <span className={styles.statNum}>{activeProject ? `${progress}%` : '—'}</span>
+              <span className={styles.statUnit}>{activeProject ? 'complete' : 'no project'}</span>
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Projects Shipped</span>
+            <div className={styles.statValue}>
+              <span className={styles.statNum}>{completedCount}</span>
+              <span className={styles.statUnit}>completed</span>
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Total Projects</span>
+            <div className={styles.statValue}>
+              <span className={styles.statNum}>{allProjects?.length || 0}</span>
+              <span className={styles.statUnit}>all time</span>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.mainGrid}>
+          <div className={styles.leftCol}>
+
+            {/* Active project */}
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div>
+                  <h2 className={styles.cardTitle}>Active Project</h2>
+                  <p className={styles.cardSub}>
+                    {loadingActive ? 'Loading...' : activeProject?.title || 'No active project'}
+                  </p>
+                </div>
+                {activeProject && (
+                  <Link to={`/projects/${activeProject.id}`} className={styles.viewBtn}>
+                    View →
+                  </Link>
+                )}
+              </div>
+
+              {!activeProject && !loadingActive && (
+                <div className={styles.emptyState}>
+                  <p className={styles.emptyText}>You have no active project.</p>
+                  <Link to="/projects/new" className={styles.emptyBtn}>
+                    ⚡ Start a New Project
+                  </Link>
+                </div>
+              )}
+
+              {activeProject && (
+                <>
+                  <div className={styles.progressWrap}>
+                    <div className={styles.progressBar}>
+                      <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+                    </div>
+                    <span className={styles.progressLabel}>{progress}%</span>
+                  </div>
+
+                  <div className={styles.phases}>
+                    {activeProject.phases?.map((phase) => {
+                      const phaseDone = phase.tasks?.every(t => t.status === 'done')
+                      const phaseActive = phase.tasks?.some(t => t.status === 'in_progress')
+                      const isOpen = expandedPhase === phase.id
+
+                      return (
+                        <div key={phase.id} className={styles.phase}>
+                          <div
+                            className={`${styles.phaseHeader} ${phaseDone ? styles.phaseDone : ''} ${phaseActive ? styles.phaseActive : ''}`}
+                            onClick={() => setExpandedPhase(isOpen ? null : phase.id)}
+                          >
+                            <div className={styles.phaseLeft}>
+                              <span className={styles.phaseIcon}>
+                                {phaseDone ? '✅' : phaseActive ? '⚡' : '○'}
+                              </span>
+                              <span className={styles.phaseTitle}>{phase.title}</span>
+                            </div>
+                            <span className={styles.phaseChevron}>{isOpen ? '▾' : '▸'}</span>
+                          </div>
+
+                          {isOpen && (
+                            <div className={styles.taskList}>
+                              {phase.tasks?.map((task) => (
+                                <div key={task.id} className={styles.taskItem}>
+                                  <span className={`${styles.taskDot} ${styles[`task_${task.status}`]}`} />
+                                  <span className={styles.taskTitle}>{task.title}</span>
+                                  <span className={styles.taskBadge}>{task.status.replace('_', ' ')}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Past projects */}
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Past Projects</h2>
+              {loadingProjects ? (
+                <p className={styles.cardSub}>Loading...</p>
+              ) : pastProjects.length === 0 ? (
+                <p className={styles.cardSub} style={{marginTop: '1rem'}}>No past projects yet.</p>
+              ) : (
+                <div className={styles.pastList}>
+                  {pastProjects.map((p) => (
+                    <div key={p.id} className={styles.pastItem}>
+                      <div>
+                        <p className={styles.pastTitle}>{p.title}</p>
+                        <p className={styles.pastMeta}>
+                          {p.deadline_weeks} weeks
+                          {p.completed_at ? ` · shipped ${p.completed_at}` : ''}
+                        </p>
+                      </div>
+                      <span className={`${styles.pastBadge} ${p.status === 'completed' ? styles.badgeComplete : styles.badgeAbandoned}`}>
+                        {p.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right column */}
+          <div className={styles.rightCol}>
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Execution Heatmap</h2>
+              <p className={styles.cardSub}>Last 6 months of activity</p>
+              <div className={styles.heatmap}>
+                {heatmapDays.map(([date, count]) => (
+                  <div
+                    key={date}
+                    className={styles.heatCell}
+                    style={{ background: getHeatmapColor(count) }}
+                    title={`${date}: ${count} actions`}
+                  />
+                ))}
+              </div>
+              <div className={styles.heatLegend}>
+                <span className={styles.legendLabel}>Less</span>
+                {[0, 2, 4, 6, 8].map((v) => (
+                  <div key={v} className={styles.legendCell} style={{ background: getHeatmapColor(v) }} />
+                ))}
+                <span className={styles.legendLabel}>More</span>
+              </div>
+            </div>
+
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Quick Actions</h2>
+              <div className={styles.actions}>
+                <Link to="/projects/new" className={styles.actionBtn}>
+                  <span>⚡</span> New Project
+                </Link>
+                {activeProject && (
+                  <Link to={`/projects/${activeProject.id}`} className={styles.actionBtnSecondary}>
+                    <span>📋</span> View Active Project
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AppLayout>
+  )
+}

@@ -1,5 +1,4 @@
 from functools import lru_cache
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,7 +7,13 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_version: str = "0.1.0"
     api_prefix: str = "/api/v1"
-    database_url: str = "sqlite:///./buildos.db"
+    database_url: str
+
+    jwt_secret_key: str = "change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 60
+
+    gemini_api_key: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
