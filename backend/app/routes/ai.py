@@ -29,13 +29,15 @@ def evaluate(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project already evaluated")
 
     try:
-        result = evaluate_project(
+        result = evaluate_project(  # ✅ correct
             project_title=project.title,
             project_description=project.description,
             skills_input=project.skills_input,
             deadline_weeks=project.deadline_weeks,
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"AI error: {str(e)}")
 
     project.ai_feasible = result["feasible"]
@@ -82,13 +84,15 @@ def generate_plan(
         )
 
     try:
-        plan = generate_project_plan(
+        plan = generate_project_plan(  # ✅ fixed: was calling evaluate_project by mistake
             project_title=project.title,
             project_description=project.description,
             skills_input=project.skills_input,
             deadline_weeks=project.deadline_weeks,
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"AI error: {str(e)}")
 
     # Save phases, tasks, subtasks to DB
@@ -156,12 +160,14 @@ def validate_project(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No completed tasks found")
 
     try:
-        result = validate_completed_project(
+        result = validate_completed_project(  # ✅ fixed: was calling evaluate_project by mistake
             project_title=project.title,
             project_description=project.description,
             completed_tasks=completed_tasks,
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"AI error: {str(e)}")
 
     project.ai_validation_passed = result["passed"]

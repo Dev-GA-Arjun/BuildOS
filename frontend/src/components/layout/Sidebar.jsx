@@ -4,7 +4,6 @@ import styles from './Sidebar.module.css'
 
 const navItems = [
   { label: 'Dashboard', icon: '⚡', path: '/dashboard' },
-  { label: 'Projects', icon: '🗂️', path: '/projects' },
   { label: 'New Project', icon: '＋', path: '/projects/new' },
 ]
 
@@ -42,6 +41,17 @@ export default function Sidebar() {
         ))}
       </nav>
 
+      {/* Feedback */}
+      <a
+        href="https://tally.so/r/Zjd7dv"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={styles.feedbackLink}
+      >
+        <span>💬</span>
+        <span>Give Feedback</span>
+      </a>
+
       {/* User */}
       <div className={styles.bottom}>
         <div className={styles.user}>
@@ -56,6 +66,9 @@ export default function Sidebar() {
         <button className={styles.logout} onClick={handleLogout}>
           logout
         </button>
+
+        {/* Credits */}
+        <p className={styles.credit}>vibe coded by G A Arjun ⚡</p>
       </div>
     </div>
   )

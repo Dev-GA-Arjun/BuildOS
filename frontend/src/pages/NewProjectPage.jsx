@@ -144,13 +144,13 @@ export default function NewProjectPage() {
                   type="range"
                   name="deadline_weeks"
                   min={1}
-                  max={12}
+                  max={8}
                   value={form.deadline_weeks}
                   onChange={handleChange}
                 />
                 <div className={styles.sliderLabels}>
                   <span>1 week</span>
-                  <span>12 weeks</span>
+                  <span>8 weeks</span>
                 </div>
               </div>
 
@@ -199,7 +199,7 @@ export default function NewProjectPage() {
               </div>
             )}
 
-            {evaluation.suggested_weeks && (
+            {evaluation.suggested_weeks && evaluation.suggested_weeks !== Number(form.deadline_weeks) && (
               <div className={styles.timelineWarn}>
                 <p>⏱️ AI suggests <strong className={styles.accentText}>{evaluation.suggested_weeks} weeks</strong> for this project instead of {form.deadline_weeks}.</p>
               </div>

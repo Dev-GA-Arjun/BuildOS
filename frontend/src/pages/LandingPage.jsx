@@ -21,10 +21,7 @@ export default function LandingPage() {
 
   return (
     <div className={styles.wrapper}>
-      {/* Animated grid background */}
       <div className={styles.grid} ref={gridRef} />
-
-      {/* Glow orb */}
       <div className={styles.orb} />
 
       {/* Nav */}
@@ -67,7 +64,6 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        {/* Stats */}
         <div className={styles.stats}>
           <div className={styles.stat}>
             <span className={styles.statNum}>AI</span>
@@ -89,26 +85,10 @@ export default function LandingPage() {
       {/* Features */}
       <section className={styles.features}>
         {[
-          {
-            icon: '⚡',
-            title: 'Skill Evaluation',
-            desc: 'Tell us your idea and current skills. AI decides if you\'re ready — or what to learn first.'
-          },
-          {
-            icon: '🗺️',
-            title: 'AI Execution Plan',
-            desc: 'Get a week-by-week breakdown with tasks and subtasks tailored to your level.'
-          },
-          {
-            icon: '🔥',
-            title: 'Streak Tracking',
-            desc: 'GitHub-style heatmap tracks your daily execution. Build momentum, not excuses.'
-          },
-          {
-            icon: '✅',
-            title: 'AI Validation',
-            desc: 'When you\'re done, AI validates your project was actually completed correctly.'
-          },
+          { icon: '⚡', title: 'Skill Evaluation', desc: "Tell us your idea and current skills. AI decides if you're ready — or what to learn first." },
+          { icon: '🗺️', title: 'AI Execution Plan', desc: 'Get a week-by-week breakdown with tasks and subtasks tailored to your level.' },
+          { icon: '🔥', title: 'Streak Tracking', desc: 'GitHub-style heatmap tracks your daily execution. Build momentum, not excuses.' },
+          { icon: '✅', title: 'AI Validation', desc: "When you're done, AI validates your project was actually completed correctly." },
         ].map((f) => (
           <div key={f.title} className={styles.featureCard}>
             <span className={styles.featureIcon}>{f.icon}</span>
@@ -118,12 +98,43 @@ export default function LandingPage() {
         ))}
       </section>
 
+      {/* Feedback Section */}
+      <section className={styles.feedbackSection}>
+        <div className={styles.feedbackInner}>
+          <div className={styles.feedbackLeft}>
+            <h2 className={styles.feedbackTitle}>Help shape BuildOS</h2>
+            <p className={styles.feedbackSub}>
+              Got ideas, bugs, or just want to say what you think? I read every response.
+            </p>
+          </div>
+          <a
+            href="https://tally.so/r/Zjd7dv"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.feedbackBtn}
+          >
+            💬 Give Feedback
+          </a>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className={styles.footer}>
-        <span className={styles.footerText}>
-          Built for developers who ship.
-        </span>
-        <span className={styles.footerAccent}>BuildOS © 2026</span>
+        <div className={styles.footerLeft}>
+          <span className={styles.footerText}>Built for developers who ship.</span>
+          <span className={styles.credit}>vibe coded by G A Arjun ⚡</span>
+        </div>
+        <div className={styles.footerRight}>
+          <span className={styles.footerAccent}>BuildOS © 2026</span>
+          <a
+            href="https://www.linkedin.com/in/gaarjun"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.connectBtn}
+          >
+            Connect on LinkedIn →
+          </a>
+        </div>
       </footer>
     </div>
   )

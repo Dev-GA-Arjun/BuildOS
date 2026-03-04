@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from enum import StrEnum
+from sqlalchemy import Enum as SAEnum
 
 from sqlalchemy import (
     Boolean, Date, DateTime, Enum, 
@@ -73,7 +74,7 @@ class Project(Base):
     missing_skills: Mapped[str | None] = mapped_column(Text, nullable=True)  # Skills user needs to learn
 
     status: Mapped[ProjectStatus] = mapped_column(
-        Enum(ProjectStatus, name="project_status"),
+        SAEnum(ProjectStatus, name="project_status", values_callable=lambda x: [e.value for e in x]),
         default=ProjectStatus.DRAFT,
         nullable=False,
     )
@@ -128,7 +129,7 @@ class Task(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[TaskStatus] = mapped_column(
-        Enum(TaskStatus, name="task_status"),
+        SAEnum(TaskStatus, name="task_status", values_callable=lambda x: [e.value for e in x]),
         default=TaskStatus.TODO,
         nullable=False,
     )
@@ -157,7 +158,7 @@ class Subtask(Base):
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[SubtaskStatus] = mapped_column(
-        Enum(SubtaskStatus, name="subtask_status"),
+        SAEnum(SubtaskStatus, name="subtask_status", values_callable=lambda x: [e.value for e in x]),
         default=SubtaskStatus.TODO,
         nullable=False,
     )

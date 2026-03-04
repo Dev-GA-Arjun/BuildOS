@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models import Subtask, SubtaskStatus, Task, TaskStatus, User
+from app.models import ActivityLog, Subtask, SubtaskStatus, Task, TaskStatus, User
 from app.routes.auth import get_current_user
 from app.schemas import SubtaskCreate, SubtaskRead, SubtaskUpdate, TaskRead, TaskUpdate
 
@@ -16,6 +16,28 @@ def get_task_for_user(task_id: int, user: User, db: Session) -> Task:
     if task is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     return task
+
+
+def log_activity(user_id: int, db: Session, subtasks_delta: int = 0, tasks_delta: int = 0):
+    """Write or update today's ActivityLog entry."""
+    today = date.today()
+    log = db.query(ActivityLog).filter(
+        ActivityLog.user_id == user_id,
+        ActivityLog.log_date == today,
+    ).first()
+
+    if log is None:
+        log = ActivityLog(
+            user_id=user_id,
+            log_date=today,
+            subtasks_completed=subtasks_delta,
+            tasks_completed=tasks_delta,
+        )
+    else:
+        log.subtasks_completed += subtasks_delta
+        log.tasks_completed += tasks_delta
+
+    db.add(log)
 
 
 @router.get("/{task_id}", response_model=TaskRead)
@@ -41,6 +63,7 @@ def update_task(
 
     if payload.status == TaskStatus.DONE and task.completed_at is None:
         task.completed_at = datetime.now(timezone.utc)
+        log_activity(current_user.id, db, tasks_delta=1)
 
     db.add(task)
     db.commit()
@@ -85,18 +108,33 @@ def update_subtask(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Subtask:
-    get_task_for_user(task_id, current_user, db)
+    task = get_task_for_user(task_id, current_user, db)
     subtask = db.query(Subtask).filter(Subtask.id == subtask_id, Subtask.task_id == task_id).first()
     if subtask is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subtask not found")
 
+    was_done = subtask.status == SubtaskStatus.DONE
+
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(subtask, field, value)
 
-    if payload.status == SubtaskStatus.DONE and subtask.completed_at is None:
+    if payload.status == SubtaskStatus.DONE and not was_done:
         subtask.completed_at = datetime.now(timezone.utc)
+        log_activity(current_user.id, db, subtasks_delta=1)  # ✅ log subtask completion
 
     db.add(subtask)
+    db.flush()
+
+    # ✅ Auto-mark task as done when all subtasks are completed
+    all_subtasks = db.query(Subtask).filter(Subtask.task_id == task_id).all()
+    all_done = all(s.status == SubtaskStatus.DONE for s in all_subtasks)
+
+    if all_done and task.status != TaskStatus.DONE:
+        task.status = TaskStatus.DONE
+        task.completed_at = datetime.now(timezone.utc)
+        log_activity(current_user.id, db, tasks_delta=1)  # ✅ log task completion
+        db.add(task)
+
     db.commit()
     db.refresh(subtask)
     return subtask

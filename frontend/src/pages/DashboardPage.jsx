@@ -1,24 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import AppLayout from '../components/layout/AppLayout'
 import { useActiveProject, useProjects } from '../hooks/useProjects'
+import apiClient from '../api/client'
 import styles from './DashboardPage.module.css'
-
-// Generate heatmap data
-function generateHeatmap() {
-  const data = {}
-  const today = new Date()
-  for (let i = 180; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    const key = d.toISOString().split('T')[0]
-    const rand = Math.random()
-    data[key] = rand > 0.6 ? Math.floor(rand * 8) : 0
-  }
-  return data
-}
-
-const heatmapData = generateHeatmap()
 
 function getHeatmapColor(count) {
   if (count === 0) return 'var(--bg-card)'
@@ -40,14 +25,27 @@ function calcProgress(project) {
   return total === 0 ? 0 : Math.round((done / total) * 100)
 }
 
-function calcStreak() {
+function generateDays() {
+  const days = []
+  const today = new Date()
+  for (let i = 180; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    days.push(d.toISOString().split('T')[0])
+  }
+  return days
+}
+
+function calcStreak(activityData) {
   const today = new Date()
   let streak = 0
   for (let i = 0; i < 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
     const key = d.toISOString().split('T')[0]
-    if (heatmapData[key] > 0) streak++
+    const entry = activityData[key]
+    const count = entry ? (entry.subtasks_completed + entry.tasks_completed) : 0
+    if (count > 0) streak++
     else break
   }
   return streak
@@ -55,28 +53,38 @@ function calcStreak() {
 
 export default function DashboardPage() {
   const [expandedPhase, setExpandedPhase] = useState(null)
+  const [activityData, setActivityData] = useState({})
   const { data: activeProject, isLoading: loadingActive } = useActiveProject()
   const { data: allProjects, isLoading: loadingProjects } = useProjects()
 
+  useEffect(() => {
+    apiClient.get('/activity/')
+      .then(res => setActivityData(res.data))
+      .catch(() => setActivityData({}))
+  }, [])
+
   const progress = calcProgress(activeProject)
-  const streak = calcStreak()
-  const heatmapDays = Object.entries(heatmapData)
-  const pastProjects = allProjects?.filter(p => p.status !== 'active') || []
-  const completedCount = pastProjects.filter(p => p.status === 'completed').length
+  const streak = calcStreak(activityData)
+  const allDays = generateDays()
+  const pastProjects = allProjects?.filter(p => p.status === 'completed' || p.status === 'abandoned') || []
+  const completedCount = allProjects?.filter(p => p.status === 'completed').length || 0
 
   return (
     <AppLayout>
       <div className={styles.dashboard}>
 
-        {/* Stats */}
         <div className={styles.statsRow}>
-          <div className={styles.statCard}>
+          <div className={`${styles.statCard} ${styles.streakCard}`}>
             <span className={styles.statLabel}>Current Streak</span>
-            <div className={styles.statValue}>
-              <span className={styles.statNum}>{streak}</span>
-              <span className={styles.statUnit}>days 🔥</span>
+            <div className={styles.streakValue}>
+              <div className={styles.streakFire}>🔥</div>
+              <div className={styles.streakInfo}>
+                <span className={styles.streakNum}>{streak}</span>
+                <span className={styles.streakUnit}>{streak === 1 ? 'Day' : 'Days'}</span>
+              </div>
             </div>
           </div>
+
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Active Project</span>
             <div className={styles.statValue}>
@@ -84,6 +92,7 @@ export default function DashboardPage() {
               <span className={styles.statUnit}>{activeProject ? 'complete' : 'no project'}</span>
             </div>
           </div>
+
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Projects Shipped</span>
             <div className={styles.statValue}>
@@ -91,19 +100,10 @@ export default function DashboardPage() {
               <span className={styles.statUnit}>completed</span>
             </div>
           </div>
-          <div className={styles.statCard}>
-            <span className={styles.statLabel}>Total Projects</span>
-            <div className={styles.statValue}>
-              <span className={styles.statNum}>{allProjects?.length || 0}</span>
-              <span className={styles.statUnit}>all time</span>
-            </div>
-          </div>
         </div>
 
         <div className={styles.mainGrid}>
           <div className={styles.leftCol}>
-
-            {/* Active project */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <div>
@@ -113,18 +113,14 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 {activeProject && (
-                  <Link to={`/projects/${activeProject.id}`} className={styles.viewBtn}>
-                    View →
-                  </Link>
+                  <Link to={`/projects/${activeProject.id}`} className={styles.viewBtn}>View →</Link>
                 )}
               </div>
 
               {!activeProject && !loadingActive && (
                 <div className={styles.emptyState}>
                   <p className={styles.emptyText}>You have no active project.</p>
-                  <Link to="/projects/new" className={styles.emptyBtn}>
-                    ⚡ Start a New Project
-                  </Link>
+                  <Link to="/projects/new" className={styles.emptyBtn}>⚡ Start a New Project</Link>
                 </div>
               )}
 
@@ -136,13 +132,11 @@ export default function DashboardPage() {
                     </div>
                     <span className={styles.progressLabel}>{progress}%</span>
                   </div>
-
                   <div className={styles.phases}>
                     {activeProject.phases?.map((phase) => {
                       const phaseDone = phase.tasks?.every(t => t.status === 'done')
                       const phaseActive = phase.tasks?.some(t => t.status === 'in_progress')
                       const isOpen = expandedPhase === phase.id
-
                       return (
                         <div key={phase.id} className={styles.phase}>
                           <div
@@ -150,14 +144,11 @@ export default function DashboardPage() {
                             onClick={() => setExpandedPhase(isOpen ? null : phase.id)}
                           >
                             <div className={styles.phaseLeft}>
-                              <span className={styles.phaseIcon}>
-                                {phaseDone ? '✅' : phaseActive ? '⚡' : '○'}
-                              </span>
+                              <span className={styles.phaseIcon}>{phaseDone ? '✅' : phaseActive ? '⚡' : '○'}</span>
                               <span className={styles.phaseTitle}>{phase.title}</span>
                             </div>
                             <span className={styles.phaseChevron}>{isOpen ? '▾' : '▸'}</span>
                           </div>
-
                           {isOpen && (
                             <div className={styles.taskList}>
                               {phase.tasks?.map((task) => (
@@ -177,13 +168,12 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Past projects */}
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>Past Projects</h2>
               {loadingProjects ? (
                 <p className={styles.cardSub}>Loading...</p>
               ) : pastProjects.length === 0 ? (
-                <p className={styles.cardSub} style={{marginTop: '1rem'}}>No past projects yet.</p>
+                <p className={styles.cardSub} style={{ marginTop: '1rem' }}>No past projects yet.</p>
               ) : (
                 <div className={styles.pastList}>
                   {pastProjects.map((p) => (
@@ -191,8 +181,7 @@ export default function DashboardPage() {
                       <div>
                         <p className={styles.pastTitle}>{p.title}</p>
                         <p className={styles.pastMeta}>
-                          {p.deadline_weeks} weeks
-                          {p.completed_at ? ` · shipped ${p.completed_at}` : ''}
+                          {p.deadline_weeks} weeks{p.completed_at ? ` · shipped ${p.completed_at}` : ''}
                         </p>
                       </div>
                       <span className={`${styles.pastBadge} ${p.status === 'completed' ? styles.badgeComplete : styles.badgeAbandoned}`}>
@@ -205,20 +194,23 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Right column */}
           <div className={styles.rightCol}>
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>Execution Heatmap</h2>
               <p className={styles.cardSub}>Last 6 months of activity</p>
               <div className={styles.heatmap}>
-                {heatmapDays.map(([date, count]) => (
-                  <div
-                    key={date}
-                    className={styles.heatCell}
-                    style={{ background: getHeatmapColor(count) }}
-                    title={`${date}: ${count} actions`}
-                  />
-                ))}
+                {allDays.map((day) => {
+                  const entry = activityData[day]
+                  const count = entry ? (entry.subtasks_completed + entry.tasks_completed) : 0
+                  return (
+                    <div
+                      key={day}
+                      className={styles.heatCell}
+                      style={{ background: getHeatmapColor(count) }}
+                      title={`${day}: ${count} actions`}
+                    />
+                  )
+                })}
               </div>
               <div className={styles.heatLegend}>
                 <span className={styles.legendLabel}>Less</span>
@@ -232,9 +224,7 @@ export default function DashboardPage() {
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>Quick Actions</h2>
               <div className={styles.actions}>
-                <Link to="/projects/new" className={styles.actionBtn}>
-                  <span>⚡</span> New Project
-                </Link>
+                <Link to="/projects/new" className={styles.actionBtn}><span>⚡</span> New Project</Link>
                 {activeProject && (
                   <Link to={`/projects/${activeProject.id}`} className={styles.actionBtnSecondary}>
                     <span>📋</span> View Active Project
