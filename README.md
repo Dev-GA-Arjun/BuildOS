@@ -1,37 +1,390 @@
 # BuildOS
 
-BuildOS is a goal-to-execution SaaS platform that helps students, early-stage builders, and micro-creators turn long-term goals into consistent daily action.
+BuildOS is an AI-powered project completion platform designed for entry-level developers. It helps transform project ideas into structured execution plans, tracks progress, and validates completion using AI.
 
-## Repository Layout
+Users can input a project idea, specify their skills and timeline, and receive an AI-generated week-by-week execution plan. The platform allows users to manage tasks, track progress through phases and subtasks, and request AI validation once the project is completed.
 
-- `docs/` - product and technical planning docs.
-- `backend/` - FastAPI backend foundation.
-- `frontend/` - frontend app (planned).
+---
 
-## Step 1 (Context and Specifications)
+## Overview
 
-The following project docs define product context and MVP scope:
+Many beginner developers struggle to convert project ideas into finished work. BuildOS addresses this problem by combining structured planning with AI assistance.
 
-- `docs/product-brief.md`
-- `docs/mvp-scope.md`
-- `docs/api-spec.md`
-- `docs/implementation-steps.md`
+The platform evaluates whether a project is feasible given the user's skills and timeframe, generates a phased development plan, and helps users track execution until completion.
 
-## Step 2 (Backend Foundation)
+---
 
-The backend includes:
+## Core Features
 
-- FastAPI application bootstrap (`backend/app/main.py`)
-- environment-based configuration (`backend/app/core/config.py`)
-- SQLAlchemy engine/session wiring (`backend/app/db/session.py`)
-- versioned API router + health endpoint (`backend/app/api/v1/`)
+### AI Project Evaluation
 
-## Step 3 (First Persistent Resource: Task)
+Users submit a project idea, skills, and expected timeline. AI evaluates feasibility and highlights missing skills or unrealistic timelines.
 
-The backend now includes:
+### AI Generated Execution Plan
 
-- `Task` SQLAlchemy model and status enum (`backend/app/models.py`)
-- Pydantic schemas for task create/read/update (`backend/app/schemas.py`)
-- CRUD endpoints for tasks (`backend/app/routes/task.py`)
-- Alembic configuration + initial `tasks` migration (`backend/alembic/`, `backend/alembic.ini`)
-- API tests for task CRUD flows (`backend/tests/test_tasks.py`)
+Once approved, the platform generates a structured week-by-week plan divided into phases and tasks.
+
+### Task and Subtask Tracking
+
+Each phase contains tasks and subtasks that users can manage with status updates.
+
+### Progress Tracking
+
+User activity is logged to track progress over time and visualize productivity.
+
+### AI Completion Validation
+
+When a project is completed, the AI validates the work based on submitted project details and progress.
+
+### One Active Project Constraint
+
+Each user can have only one active project at a time to encourage completion.
+
+---
+
+## Tech Stack
+
+### Backend
+
+- FastAPI
+- SQLAlchemy
+- PostgreSQL (Neon)
+- Alembic migrations
+- JWT authentication
+- Google Gemini API
+
+### Frontend
+
+- React
+- Vite
+- React Router
+- TanStack Query
+- Axios
+- CSS Modules
+
+---
+
+## System Architecture
+
+Frontend communicates with the FastAPI backend through REST APIs.
+Authentication is handled using JWT tokens stored in local storage.
+
+Database persistence is handled through PostgreSQL hosted on Neon.
+
+AI capabilities are provided by Google Gemini through a backend service layer.
+
+```
+Client (React)
+      |
+      | REST API
+      |
+FastAPI Backend
+      |
+      | ORM (SQLAlchemy)
+      |
+PostgreSQL (Neon)
+
+AI Layer
+Google Gemini API
+```
+
+---
+
+## Project Structure
+
+### Backend
+
+```
+backend/
+│
+├── app/
+│   ├── main.py
+│   ├── models.py
+│   ├── schemas.py
+│   │
+│   ├── api/v1/
+│   │   ├── router.py
+│   │   └── health.py
+│   │
+│   ├── routes/
+│   │   ├── auth.py
+│   │   ├── project.py
+│   │   ├── task.py
+│   │   └── ai.py
+│   │
+│   ├── core/
+│   │   ├── config.py
+│   │   └── security.py
+│   │
+│   ├── db/
+│   │   ├── base.py
+│   │   └── session.py
+│   │
+│   └── services/
+│       └── ai.py
+│
+├── alembic/
+│
+└── .env
+```
+
+### Frontend
+
+```
+frontend/src/
+
+├── api/
+│   ├── client.js
+│   ├── auth.js
+│   ├── projects.js
+│   ├── tasks.js
+│   └── ai.js
+│
+├── context/
+│   └── AuthContext.jsx
+│
+├── hooks/
+│   ├── useProject.js
+│   └── useTask.js
+│
+├── components/layout/
+│   ├── AppLayout.jsx
+│   ├── Sidebar.jsx
+│   └── Topbar.jsx
+│
+└── pages/
+    ├── LandingPage.jsx
+    ├── LoginPage.jsx
+    ├── RegisterPage.jsx
+    ├── DashboardPage.jsx
+    ├── NewProjectPage.jsx
+    └── ProjectPage.jsx
+```
+
+---
+
+## Database Schema
+
+### User
+
+- id
+- email
+- full_name
+- hashed_password
+- is_active
+
+### Project
+
+- id
+- title
+- description
+- skills_input
+- deadline_weeks
+- ai_feasible
+- ai_evaluation
+- ai_suggested_weeks
+- missing_skills
+- status
+- ai_validation_passed
+- ai_validation_report
+
+### Phase
+
+- id
+- project_id
+- title
+- week_number
+
+### Task
+
+- id
+- phase_id
+- user_id
+- title
+- description
+- status
+- due_date
+
+### Subtask
+
+- id
+- task_id
+- title
+- status
+
+### ActivityLog
+
+- id
+- user_id
+- log_date
+- subtasks_completed
+- tasks_completed
+
+---
+
+## Environment Variables
+
+Create a `.env` file in the backend directory.
+
+```
+DATABASE_URL=your_neon_postgres_connection
+SECRET_KEY=your_jwt_secret
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+---
+
+## Installation
+
+### 1. Clone Repository
+
+```
+git clone https://github.com/yourusername/buildos.git
+cd buildos
+```
+
+---
+
+### 2. Backend Setup
+
+```
+cd backend
+
+python -m venv venv
+source venv/bin/activate   # mac/linux
+venv\Scripts\activate      # windows
+
+pip install -r requirements.txt
+```
+
+Run database migrations:
+
+```
+alembic upgrade head
+```
+
+Start backend server:
+
+```
+uvicorn app.main:app --reload
+```
+
+Backend will run on:
+
+```
+http://127.0.0.1:8000
+```
+
+---
+
+### 3. Frontend Setup
+
+```
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend will run on:
+
+```
+http://localhost:5173
+```
+
+---
+
+## API Documentation
+
+FastAPI automatically generates interactive documentation.
+
+```
+http://127.0.0.1:8000/docs
+```
+
+Main endpoints include:
+
+Auth
+
+- POST /api/v1/auth/register
+- POST /api/v1/auth/login
+- GET /api/v1/auth/me
+
+Projects
+
+- GET /api/v1/projects
+- POST /api/v1/projects
+- GET /api/v1/projects/active
+- PATCH /api/v1/projects/{id}
+- DELETE /api/v1/projects/{id}
+
+Tasks
+
+- GET /api/v1/tasks/{id}
+- PATCH /api/v1/tasks/{id}
+
+AI
+
+- POST /api/v1/ai/evaluate/{project_id}
+- POST /api/v1/ai/generate-plan/{project_id}
+- POST /api/v1/ai/validate/{project_id}
+
+---
+
+## Deployment
+
+Typical deployment architecture:
+
+Frontend
+
+- Vercel / Netlify
+
+Backend
+
+- Render / Railway / Fly.io
+
+Database
+
+- Neon PostgreSQL
+
+Steps:
+
+1. Deploy backend API
+2. Configure environment variables
+3. Run Alembic migrations on production
+4. Deploy frontend with backend API URL
+5. Test authentication and project creation flow
+
+---
+
+## Security
+
+- Password hashing using bcrypt
+- JWT authentication
+- Protected routes for authenticated users
+- Database access through SQLAlchemy ORM
+- Environment variables for secrets
+
+---
+
+## Future Improvements
+
+- GitHub repository integration
+- AI code review for project validation
+- Team collaboration support
+- Improved analytics and progress visualization
+- Creator portfolio export
+
+---
+
+## License
+
+This project is licensed under the MIT License.
+
+---
+
+## Author
+
+BuildOS was created as a developer productivity platform to help beginner developers ship projects consistently and improve their execution skills.
