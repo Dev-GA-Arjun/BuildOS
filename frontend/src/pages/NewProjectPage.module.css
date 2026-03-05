@@ -385,3 +385,14 @@
   font-weight: 700;
   font-size: 0.9rem;
 }
+
+.errorBox {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  font-family: var(--font-body);
+  line-height: 1.5;
+}

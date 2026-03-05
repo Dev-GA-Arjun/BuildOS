@@ -10,6 +10,7 @@ const STEPS = ['Define', 'Evaluate', 'Confirm']
 
 export default function NewProjectPage() {
   const createProject = useCreateProject()
+  const [error, setError] = useState(null)
   const evaluateProjectMutation = useEvaluateProject()
   const generatePlanMutation = useGeneratePlan()
   const navigate = useNavigate()
@@ -56,11 +57,12 @@ export default function NewProjectPage() {
   // Step 2 — Generate plan
   const handleGeneratePlan = async () => {
     setLoading(true)
+    setError(null)
     try {
       await generatePlanMutation.mutateAsync(projectId)
       setStep(2)
     } catch (err) {
-      console.error(err)
+      console.error(err.friendlyMessage || 'Failed to generate plan. Please try again later.')
     } finally {
       setLoading(false)
     }
@@ -153,6 +155,11 @@ export default function NewProjectPage() {
                   <span>8 weeks</span>
                 </div>
               </div>
+              {error && (
+                <div className={styles.errorBox}>
+                  ⚠️ {error}
+                </div>
+              )}
 
               <button
                 className={styles.primaryBtn}

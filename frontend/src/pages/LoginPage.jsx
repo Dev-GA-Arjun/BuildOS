@@ -8,11 +8,7 @@ import styles from './LoginPage.module.css'
 export default function LoginPage() {
   const navigate = useNavigate()
   const { loginUser } = useAuth()
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    rememberMe: false,
-  })
+  const [formData, setFormData] = useState({ email: '', password: '', rememberMe: false })
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -35,13 +31,8 @@ export default function LoginPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }))
-    }
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
   }
 
   const handleSubmit = async (e) => {
@@ -56,9 +47,15 @@ export default function LoginPage() {
       loginUser(access_token, meRes.data)
       navigate('/dashboard')
     } catch (error) {
-      setErrors({
-        submit: error.response?.data?.detail || 'Invalid email or password.',
-      })
+      const detail = error.response?.data?.detail
+
+      // ✅ Handle unverified email — redirect to verify page
+      if (detail === 'EMAIL_NOT_VERIFIED') {
+        navigate('/verify-email', { state: { email: formData.email } })
+        return
+      }
+
+      setErrors({ submit: error.friendlyMessage || detail || 'Invalid email or password.' })
     } finally {
       setIsLoading(false)
     }
@@ -71,9 +68,7 @@ export default function LoginPage() {
 
       <nav className={styles.nav}>
         <Link to="/" className={styles.logo}>
-          <span className={styles.logoBracket}>&lt;</span>
-          BuildOS
-          <span className={styles.logoBracket}>/&gt;</span>
+          <span className={styles.logoBracket}>&lt;</span>BuildOS<span className={styles.logoBracket}>/&gt;</span>
         </Link>
         <div className={styles.navLinks}>
           <span className={styles.navText}>New here?</span>
@@ -85,26 +80,19 @@ export default function LoginPage() {
         <div className={styles.formContainer}>
           <div className={styles.header}>
             <h1 className={styles.title}>Welcome Back</h1>
-            <p className={styles.subtitle}>
-              Sign in to your BuildOS account to continue your projects
-            </p>
+            <p className={styles.subtitle}>Sign in to your BuildOS account to continue your projects</p>
           </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             {errors.submit && (
-              <div className={styles.errorMessage}>
-                <span>⚠️</span> {errors.submit}
-              </div>
+              <div className={styles.errorMessage}><span>⚠️</span> {errors.submit}</div>
             )}
 
             <div className={styles.formGroup}>
               <label htmlFor="email" className={styles.label}>Email Address</label>
               <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
+                type="email" id="email" name="email"
+                value={formData.email} onChange={handleChange}
                 placeholder="you@example.com"
                 className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
                 disabled={isLoading}
@@ -120,20 +108,14 @@ export default function LoginPage() {
               <div className={styles.passwordInputWrapper}>
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
+                  id="password" name="password"
+                  value={formData.password} onChange={handleChange}
                   placeholder="••••••••"
                   className={`${styles.input} ${errors.password ? styles.inputError : ''}`}
                   disabled={isLoading}
                 />
-                <button
-                  type="button"
-                  className={styles.togglePassword}
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                >
+                <button type="button" className={styles.togglePassword}
+                  onClick={() => setShowPassword(!showPassword)} disabled={isLoading}>
                   {showPassword ? '🙈' : '👁️'}
                 </button>
               </div>
@@ -141,24 +123,14 @@ export default function LoginPage() {
             </div>
 
             <div className={styles.checkboxGroup}>
-              <input
-                type="checkbox"
-                id="rememberMe"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-                className={styles.checkbox}
-                disabled={isLoading}
-              />
-              <label htmlFor="rememberMe" className={styles.checkboxLabel}>
-                Keep me signed in
-              </label>
+              <input type="checkbox" id="rememberMe" name="rememberMe"
+                checked={formData.rememberMe} onChange={handleChange}
+                className={styles.checkbox} disabled={isLoading} />
+              <label htmlFor="rememberMe" className={styles.checkboxLabel}>Keep me signed in</label>
             </div>
 
             <button type="submit" className={styles.submitBtn} disabled={isLoading}>
-              {isLoading ? (
-                <><span className={styles.spinner} /> Signing in...</>
-              ) : 'Sign In'}
+              {isLoading ? <><span className={styles.spinner} /> Signing in...</> : 'Sign In'}
             </button>
 
             <div className={styles.divider}>or continue with</div>

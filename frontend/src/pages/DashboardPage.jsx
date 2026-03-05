@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import AppLayout from '../components/layout/AppLayout'
 import { useActiveProject, useProjects } from '../hooks/useProjects'
 import apiClient from '../api/client'
@@ -38,8 +38,22 @@ function generateDays() {
 
 function calcStreak(activityData) {
   const today = new Date()
+  const todayKey = today.toISOString().split('T')[0]
+
+  // Check if user has done anything today
+  const todayEntry = activityData[todayKey]
+  const workedToday = todayEntry
+    ? (todayEntry.subtasks_completed + todayEntry.tasks_completed) > 0
+    : false
+
   let streak = 0
-  for (let i = 0; i < 365; i++) {
+
+  // If nothing done today AND nothing done yesterday → streak is 0
+  // If nothing done today but worked yesterday → streak is still counting from yesterday
+  // Start from today if worked today, otherwise start from yesterday
+  const startOffset = workedToday ? 0 : 1
+
+  for (let i = startOffset; i < 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
     const key = d.toISOString().split('T')[0]
@@ -48,6 +62,7 @@ function calcStreak(activityData) {
     if (count > 0) streak++
     else break
   }
+
   return streak
 }
 
@@ -56,12 +71,14 @@ export default function DashboardPage() {
   const [activityData, setActivityData] = useState({})
   const { data: activeProject, isLoading: loadingActive } = useActiveProject()
   const { data: allProjects, isLoading: loadingProjects } = useProjects()
+  const location = useLocation()
 
+  // ✅ Re-fetch activity every time dashboard is visited
   useEffect(() => {
     apiClient.get('/activity/')
       .then(res => setActivityData(res.data))
       .catch(() => setActivityData({}))
-  }, [])
+  }, [location.key])
 
   const progress = calcProgress(activeProject)
   const streak = calcStreak(activityData)

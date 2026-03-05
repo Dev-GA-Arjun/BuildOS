@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import AppLayout from '../components/layout/AppLayout'
 import { useProject, useValidateProject, useAbandonProject } from '../hooks/useProjects'
 import { useUpdateSubtask } from '../hooks/useTask'
@@ -40,10 +41,9 @@ function generateLinkedInPost(project, validationReport) {
   const weeks = project.deadline_weeks
   const title = project.title
   const skillsLearned = project.missing_skills
-    ? `\n Topics I learned along the way: ${project.missing_skills}`
+    ? `\n🧠 Topics I learned along the way: ${project.missing_skills}`
     : ''
-
-  return ` Just shipped "${title}"!
+  return `🚀 Just shipped "${title}"!
 
 I challenged myself to build this project in ${weeks} week${weeks > 1 ? 's' : ''} — and I did it.
 
@@ -51,7 +51,9 @@ ${validationReport || 'It was a challenging but rewarding build. Learned a lot a
 
 Tracked every task, every phase, every week using BuildOS — an AI-powered project completion tracker that held me accountable.
 
-#buildwithbuildos`
+If you're an entry-level dev struggling to finish projects, BuildOS is worth checking out.
+
+#buildinpublic #webdev #shipping #coding #100daysofcode #buildwithbuildos`
 }
 
 const DEPLOY_LINKS = [
@@ -61,6 +63,7 @@ const DEPLOY_LINKS = [
   { name: 'Railway', desc: 'Full-stack in one place', url: 'https://railway.app', color: '#7B61FF', icon: '🚂' },
 ]
 
+// ── Ship Modal ────────────────────────────────────────────
 function ShipModal({ project, validationReport, onClose }) {
   const [copied, setCopied] = useState(false)
   const [postText, setPostText] = useState(generateLinkedInPost(project, validationReport))
@@ -79,16 +82,13 @@ function ShipModal({ project, validationReport, onClose }) {
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
-
         <div className={styles.modalHeader}>
           <div className={styles.modalEmoji}>🚀</div>
           <h2 className={styles.modalTitle}>Project Shipped!</h2>
           <p className={styles.modalSub}>
             You built <strong>{project.title}</strong> in {project.deadline_weeks} week{project.deadline_weeks > 1 ? 's' : ''}. That's real.
           </p>
-          {validationReport && (
-            <p className={styles.modalReport}>{validationReport}</p>
-          )}
+          {validationReport && <p className={styles.modalReport}>{validationReport}</p>}
         </div>
 
         <div className={styles.modalSection}>
@@ -96,19 +96,10 @@ function ShipModal({ project, validationReport, onClose }) {
             <h3 className={styles.sectionTitle}>📢 Share on LinkedIn</h3>
             <span className={styles.sectionHint}>Edit before posting</span>
           </div>
-          <textarea
-            className={styles.postTextarea}
-            value={postText}
-            onChange={e => setPostText(e.target.value)}
-            rows={10}
-          />
+          <textarea className={styles.postTextarea} value={postText} onChange={e => setPostText(e.target.value)} rows={10} />
           <div className={styles.postActions}>
-            <button className={styles.copyBtn} onClick={handleCopy}>
-              {copied ? '✓ Copied!' : '📋 Copy'}
-            </button>
-            <button className={styles.linkedinBtn} onClick={handleLinkedIn}>
-              Share on LinkedIn →
-            </button>
+            <button className={styles.copyBtn} onClick={handleCopy}>{copied ? '✓ Copied!' : '📋 Copy'}</button>
+            <button className={styles.linkedinBtn} onClick={handleLinkedIn}>Share on LinkedIn →</button>
           </div>
         </div>
 
@@ -116,13 +107,7 @@ function ShipModal({ project, validationReport, onClose }) {
           <h3 className={styles.sectionTitle}>🌐 Deploy Your Project</h3>
           <div className={styles.deployGrid}>
             {DEPLOY_LINKS.map(link => (
-              <a
-                key={link.name}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.deployCard}
-              >
+              <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className={styles.deployCard}>
                 <span className={styles.deployIcon} style={{ color: link.color }}>{link.icon}</span>
                 <div>
                   <p className={styles.deployName}>{link.name}</p>
@@ -134,20 +119,44 @@ function ShipModal({ project, validationReport, onClose }) {
           </div>
         </div>
 
-        <button className={styles.modalClose} onClick={onClose}>
-          Done — Go to Dashboard
-        </button>
+        <button className={styles.modalClose} onClick={onClose}>Done — Go to Dashboard</button>
       </div>
     </div>
   )
 }
 
+// ── Abandon Modal ─────────────────────────────────────────
+function AbandonModal({ project, onConfirm, onCancel, isPending }) {
+  return (
+    <div className={styles.modalOverlay} onClick={onCancel}>
+      <div className={styles.abandonModal} onClick={e => e.stopPropagation()}>
+        <div className={styles.abandonEmoji}>⚠️</div>
+        <h2 className={styles.abandonTitle}>Abandon Project?</h2>
+        <p className={styles.abandonSub}>
+          Are you sure you want to abandon <strong>"{project.title}"</strong>? This can't be undone.
+        </p>
+        <div className={styles.abandonActions}>
+          <button className={styles.abandonCancelBtn} onClick={onCancel} disabled={isPending}>
+            Keep Building
+          </button>
+          <button className={styles.abandonConfirmBtn} onClick={onConfirm} disabled={isPending}>
+            {isPending ? 'Abandoning...' : 'Yes, Abandon'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main Page ─────────────────────────────────────────────
 export default function ProjectPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [activePhaseId, setActivePhaseId] = useState(null)
   const [expandedTask, setExpandedTask] = useState(null)
   const [shipModal, setShipModal] = useState(false)
+  const [abandonModal, setAbandonModal] = useState(false)
   const [validationReport, setValidationReport] = useState(null)
 
   const { data: project, isLoading } = useProject(id)
@@ -176,6 +185,9 @@ export default function ProjectPage() {
     try {
       const result = await validateMutation.mutateAsync(id)
       setValidationReport(result?.ai_validation_report || null)
+      // ✅ Invalidate so dashboard refetches updated project status + completed count
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      queryClient.invalidateQueries({ queryKey: ['activeProject'] })
       setShipModal(true)
     } catch {
       alert('Validation failed. Try again.')
@@ -183,9 +195,14 @@ export default function ProjectPage() {
   }
 
   const handleAbandon = async () => {
-    if (window.confirm('Are you sure you want to abandon this project?')) {
+    try {
       await abandonMutation.mutateAsync(id)
+      // ✅ Invalidate so dashboard refetches
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      queryClient.invalidateQueries({ queryKey: ['activeProject'] })
       navigate('/dashboard')
+    } catch {
+      alert('Failed to abandon project. Try again.')
     }
   }
 
@@ -212,6 +229,15 @@ export default function ProjectPage() {
             project={project}
             validationReport={validationReport || project?.ai_validation_report}
             onClose={() => { setShipModal(false); navigate('/dashboard') }}
+          />
+        )}
+
+        {abandonModal && (
+          <AbandonModal
+            project={project}
+            onConfirm={handleAbandon}
+            onCancel={() => setAbandonModal(false)}
+            isPending={abandonMutation.isPending}
           />
         )}
 
@@ -305,7 +331,9 @@ export default function ProjectPage() {
               const phasePct = totalSubs ? Math.round((doneSubs / totalSubs) * 100) : 0
               const isActive = (activePhaseId ?? project?.phases?.[0]?.id) === phase.id
               return (
-                <div key={phase.id} className={`${styles.phaseTab} ${isActive ? styles.phaseTabActive : ''} ${allDone ? styles.phaseTabDone : ''}`} onClick={() => setActivePhaseId(phase.id)}>
+                <div key={phase.id}
+                  className={`${styles.phaseTab} ${isActive ? styles.phaseTabActive : ''} ${allDone ? styles.phaseTabDone : ''}`}
+                  onClick={() => setActivePhaseId(phase.id)}>
                   <div className={styles.phaseTabTop}>
                     <span className={styles.phaseTabIcon}>{allDone ? '✅' : hasActive ? '⚡' : '○'}</span>
                     <span className={styles.phaseTabTitle}>{phase.title}</span>
@@ -359,7 +387,9 @@ export default function ProjectPage() {
                     {isOpen && (
                       <div className={styles.subtaskList}>
                         {task.subtasks?.map((sub) => (
-                          <div key={sub.id} className={`${styles.subtaskItem} ${sub.status === 'done' ? styles.subtaskDone : ''}`} onClick={() => toggleSubtask(task.id, sub.id, sub.status)}>
+                          <div key={sub.id}
+                            className={`${styles.subtaskItem} ${sub.status === 'done' ? styles.subtaskDone : ''}`}
+                            onClick={() => toggleSubtask(task.id, sub.id, sub.status)}>
                             <div className={`${styles.checkbox} ${sub.status === 'done' ? styles.checkboxDone : ''}`}>
                               {sub.status === 'done' && '✓'}
                             </div>
@@ -418,9 +448,14 @@ export default function ProjectPage() {
                 )}
               </div>
             </div>
+
             {project.status === 'active' && (
-              <button className={styles.abandonBtn} onClick={handleAbandon} disabled={abandonMutation.isPending}>
-                {abandonMutation.isPending ? 'Abandoning...' : 'Abandon Project'}
+              <button
+                className={styles.abandonBtn}
+                onClick={() => setAbandonModal(true)}
+                disabled={abandonMutation.isPending}
+              >
+                Abandon Project
               </button>
             )}
           </div>

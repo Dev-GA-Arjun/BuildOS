@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 60
 
     openrouter_api_key: str = ""
+    resend_api_key: str = ""
+    frontend_url: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(
         env_file=".env",

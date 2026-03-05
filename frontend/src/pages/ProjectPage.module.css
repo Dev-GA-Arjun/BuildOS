@@ -522,3 +522,91 @@
   transition: var(--transition);
 }
 .modalClose:hover { box-shadow: var(--accent-glow); transform: translateY(-1px); }
+
+/* ── Abandon Modal ── */
+.abandonModal {
+  background: var(--bg-card);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(239, 68, 68, 0.15);
+  animation: modalIn 0.2s ease;
+}
+
+.abandonEmoji {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.abandonTitle {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.abandonSub {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.abandonSub strong {
+  color: var(--text-primary);
+}
+
+.abandonActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.abandonCancelBtn {
+  flex: 1;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.abandonCancelBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.abandonConfirmBtn {
+  flex: 1;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.abandonConfirmBtn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+}
+
+.abandonConfirmBtn:disabled,
+.abandonCancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
