@@ -96,69 +96,111 @@ Google Gemini API
 
 ```
 backend/
-│
+├── alembic/
+│   ├── versions/
+│   ├── env.py
+│   ├── script.py.mako
+│   └── __pycache__/
 ├── app/
-│   ├── main.py
-│   ├── models.py
-│   ├── schemas.py
-│   │
-│   ├── api/v1/
-│   │   ├── router.py
-│   │   └── health.py
-│   │
+│   ├── api/
+│   │   ├── v1/
+│   │   │   ├── health.py
+│   │   │   ├── router.py
+│   │   │   └── __init__.py
+│   │   └── __init__.py
+│   ├── core/
+│   │   ├── config.py
+│   │   ├── security.py
+│   │   └── __init__.py
+│   ├── db/
+│   │   ├── base.py
+│   │   ├── session.py
+│   │   └── __init__.py
 │   ├── routes/
+│   │   ├── activity.py
+│   │   ├── ai.py
 │   │   ├── auth.py
 │   │   ├── project.py
 │   │   ├── task.py
-│   │   └── ai.py
-│   │
-│   ├── core/
-│   │   ├── config.py
-│   │   └── security.py
-│   │
-│   ├── db/
-│   │   ├── base.py
-│   │   └── session.py
-│   │
-│   └── services/
-│       └── ai.py
-│
-├── alembic/
-│
-└── .env
+│   │   └── __init__.py
+│   ├── services/
+│   │   ├── ai.py
+│   │   ├── email.py
+│   │   └── __init__.py
+│   ├── main.py
+│   ├── models.py
+│   ├── schemas.py
+│   └── __init__.py
+├── tests/
+│   ├── conftest.py
+│   ├── test_auth.py
+│   ├── test_execution.py
+│   ├── test_health.py
+│   └── test_tasks.py
+├── .env
+├── .env.example
+├── .gitkeep
+├── alembic.ini
+├── requirements.txt
+├── runtime.txt
+└── venv/
 ```
 
 ### Frontend
 
 ```
-frontend/src/
 
-├── api/
-│   ├── client.js
-│   ├── auth.js
-│   ├── projects.js
-│   ├── tasks.js
-│   └── ai.js
-│
-├── context/
-│   └── AuthContext.jsx
-│
-├── hooks/
-│   ├── useProject.js
-│   └── useTask.js
-│
-├── components/layout/
-│   ├── AppLayout.jsx
-│   ├── Sidebar.jsx
-│   └── Topbar.jsx
-│
-└── pages/
-    ├── LandingPage.jsx
-    ├── LoginPage.jsx
-    ├── RegisterPage.jsx
-    ├── DashboardPage.jsx
-    ├── NewProjectPage.jsx
-    └── ProjectPage.jsx
+frontend/
+   ├── public/
+   │   └── favicon.png
+   ├── src/
+   │   ├── api/
+   │   │   ├── ai.js
+   │   │   ├── auth.js
+   │   │   ├── client.js
+   │   │   ├── projects.js
+   │   │   └── tasks.js
+   │   ├── assets/
+   │   │   └── react.svg
+   │   ├── components/
+   │   │   └── layout/
+   │   │       ├── AppLayout.jsx
+   │   │       ├── AppLayout.module.css
+   │   │       ├── Sidebar.jsx
+   │   │       ├── Sidebar.module.css
+   │   │       ├── Topbar.jsx
+   │   │       └── Topbar.module.css
+   │   ├── context/
+   │   │   └── AuthContext.jsx
+   │   ├── hooks/
+   │   │   ├── useProjects.js
+   │   │   └── useTask.js
+   │   ├── pages/
+   │   │   ├── DashboardPage.jsx
+   │   │   ├── DashboardPage.module.css
+   │   │   ├── ForgotPasswordPage.jsx
+   │   │   ├── LandingPage.jsx
+   │   │   ├── LandingPage.module.css
+   │   │   ├── LoginPage.jsx
+   │   │   ├── LoginPage.module.css
+   │   │   ├── NewProjectPage.jsx
+   │   │   ├── NewProjectPage.module.css
+   │   │   ├── ProjectPage.jsx
+   │   │   ├── ProjectPage.module.css
+   │   │   ├── RegisterPage.jsx
+   │   │   ├── ResetPasswordPage.jsx
+   │   │   └── VerifyEmailPage.jsx
+   │   ├── App.jsx
+   │   ├── index.css
+   │   └── main.jsx
+   ├── .gitignore
+   ├── eslint.config.js
+   ├── index.html
+   ├── package-lock.json
+   ├── package.json
+   ├── README.md
+   ├── vite.config.js
+   └── node_modules/
 ```
 
 ---
