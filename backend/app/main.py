@@ -21,12 +21,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ✅ ADD THIS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "https://shipwithbuildos.vercel.app/login",
+        "https://buildos-gb8n.onrender.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
