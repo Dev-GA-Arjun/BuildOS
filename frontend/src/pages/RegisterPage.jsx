@@ -142,10 +142,12 @@ export default function RegisterPage() {
             <div className={styles.divider}>or continue with</div>
 
             <div className={styles.oauthButtons}>
-              <button type="button" className={styles.oauthBtn} disabled={isLoading}>
+              <button type="button" className={styles.oauthBtn} disabled={isLoading}
+                onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/auth/github`}>
                 <FaGithub size={18} /> GitHub
               </button>
-              <button type="button" className={styles.oauthBtn} disabled={isLoading}>
+              <button type="button" className={styles.oauthBtn} disabled={isLoading}
+                onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`}>
                 <FaGoogle size={16} /> Google
               </button>
             </div>

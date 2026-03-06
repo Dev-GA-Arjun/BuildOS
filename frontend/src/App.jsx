@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import OAuthCallbackPage from './pages/OAuthCallbackPage'
 
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
@@ -33,6 +34,9 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+      <Route path="/auth/google/callback" element={<OAuthCallbackPage />} />
+      <Route path="/auth/github/callback" element={<OAuthCallbackPage />} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

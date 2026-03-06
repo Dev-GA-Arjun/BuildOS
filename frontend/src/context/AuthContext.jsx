@@ -29,8 +29,14 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  const login = async (token) => {
+    localStorage.setItem('buildos_token', token)
+    const res = await getMe()
+    setUser(res.data)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, loginUser, logoutUser }}>
+    <AuthContext.Provider value={{ user, loading, loginUser, logoutUser, login  }}>
       {children}
     </AuthContext.Provider>
   )
