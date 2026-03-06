@@ -3,10 +3,13 @@ import secrets
 import string
 from datetime import datetime, timedelta, timezone
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.security import create_access_token, decode_access_token, get_password_hash, verify_password
 from app.db.session import get_db
 from app.models import User
@@ -15,6 +18,7 @@ from app.services.email import send_reset_email, send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer(auto_error=False)
+settings = get_settings()
 
 
 def get_current_user(
@@ -37,6 +41,30 @@ def get_current_user(
 
 def generate_otp() -> str:
     return ''.join(random.choices(string.digits, k=6))
+
+
+def get_or_create_oauth_user(db: Session, email: str, full_name: str, provider: str) -> User:
+    """Get existing user or create new one for OAuth login."""
+    user = db.query(User).filter(User.email == email).first()
+
+    if user is None:
+        # Create new user — OAuth users are auto-verified
+        user = User(
+            email=email,
+            full_name=full_name,
+            hashed_password=get_password_hash(secrets.token_urlsafe(32)),  # random password
+            is_verified=True,  # OAuth users don't need email verification
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not user.is_verified:
+        # If existing unverified user logs in with OAuth, verify them
+        user.is_verified = True
+        db.add(user)
+        db.commit()
+
+    return user
 
 
 # ── Register ──────────────────────────────────────────────────────────────────
@@ -65,7 +93,6 @@ def register(payload: UserRegister, db: Session = Depends(get_db)) -> User:
     try:
         send_verification_email(user.email, user.full_name, otp)
     except Exception as e:
-        # Don't block registration if email fails — log it
         import logging
         logging.getLogger(__name__).error(f"Failed to send verification email: {e}")
 
@@ -98,7 +125,6 @@ def verify_email(payload: dict, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
 
-    # Return token so user is logged in immediately after verifying
     token = create_access_token(subject=user.email)
     return {"access_token": token, "message": "Email verified successfully"}
 
@@ -137,7 +163,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)) -> TokenRead:
     if not user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="EMAIL_NOT_VERIFIED"  # frontend checks this specific string
+            detail="EMAIL_NOT_VERIFIED"
         )
 
     token = create_access_token(subject=user.email)
@@ -151,7 +177,6 @@ def forgot_password(payload: dict, db: Session = Depends(get_db)):
     email = payload.get("email", "").strip().lower()
     user = db.query(User).filter(User.email == email).first()
 
-    # Always return success to prevent email enumeration
     if user is None:
         return {"message": "If this email exists, a reset link has been sent."}
 
@@ -201,3 +226,141 @@ def reset_password(payload: dict, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserRead)
 def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+# ── Google OAuth ──────────────────────────────────────────────────────────────
+
+@router.get("/google")
+def google_login():
+    """Redirect user to Google OAuth consent screen."""
+    params = {
+        "client_id": settings.google_client_id,
+        "redirect_uri": f"{settings.frontend_url.rstrip('/')}/auth/google/callback",
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+    }
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{query}")
+
+
+@router.get("/google/callback")
+def google_callback(code: str, db: Session = Depends(get_db)):
+    """Handle Google OAuth callback — exchange code for token."""
+    try:
+        # Exchange code for tokens
+        token_res = httpx.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code": code,
+                "client_id": settings.google_client_id,
+                "client_secret": settings.google_client_secret,
+                "redirect_uri": f"{settings.frontend_url.rstrip('/')}/auth/google/callback",
+                "grant_type": "authorization_code",
+            },
+        )
+        token_data = token_res.json()
+        access_token = token_data.get("access_token")
+
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Failed to get access token from Google")
+
+        # Get user info
+        user_res = httpx.get(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        user_info = user_res.json()
+
+        email = user_info.get("email")
+        full_name = user_info.get("name", email)
+
+        if not email:
+            raise HTTPException(status_code=400, detail="Could not get email from Google")
+
+        user = get_or_create_oauth_user(db, email, full_name, "google")
+        jwt_token = create_access_token(subject=user.email)
+
+        # Redirect to frontend with token
+        return RedirectResponse(
+            f"{settings.frontend_url.rstrip('/')}/oauth/callback?token={jwt_token}"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        return RedirectResponse(
+            f"{settings.frontend_url.rstrip('/')}/login?error=google_failed"
+        )
+
+
+# ── GitHub OAuth ──────────────────────────────────────────────────────────────
+
+@router.get("/github")
+def github_login():
+    """Redirect user to GitHub OAuth consent screen."""
+    params = {
+        "client_id": settings.github_client_id,
+        "redirect_uri": f"{settings.frontend_url.rstrip('/')}/auth/github/callback",
+        "scope": "user:email",
+    }
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    return RedirectResponse(f"https://github.com/login/oauth/authorize?{query}")
+
+
+@router.get("/github/callback")
+def github_callback(code: str, db: Session = Depends(get_db)):
+    """Handle GitHub OAuth callback — exchange code for token."""
+    try:
+        # Exchange code for access token
+        token_res = httpx.post(
+            "https://github.com/login/oauth/access_token",
+            headers={"Accept": "application/json"},
+            data={
+                "client_id": settings.github_client_id,
+                "client_secret": settings.github_client_secret,
+                "code": code,
+                "redirect_uri": f"{settings.frontend_url.rstrip('/')}/auth/github/callback",
+            },
+        )
+        token_data = token_res.json()
+        access_token = token_data.get("access_token")
+
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Failed to get access token from GitHub")
+
+        # Get user info
+        user_res = httpx.get(
+            "https://api.github.com/user",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        user_info = user_res.json()
+
+        # GitHub may not expose email — fetch separately
+        email = user_info.get("email")
+        if not email:
+            emails_res = httpx.get(
+                "https://api.github.com/user/emails",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            emails = emails_res.json()
+            primary = next((e for e in emails if e.get("primary") and e.get("verified")), None)
+            email = primary["email"] if primary else None
+
+        if not email:
+            raise HTTPException(status_code=400, detail="Could not get email from GitHub")
+
+        full_name = user_info.get("name") or user_info.get("login", email)
+        user = get_or_create_oauth_user(db, email, full_name, "github")
+        jwt_token = create_access_token(subject=user.email)
+
+        return RedirectResponse(
+            f"{settings.frontend_url.rstrip('/')}/oauth/callback?token={jwt_token}"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        return RedirectResponse(
+            f"{settings.frontend_url.rstrip('/')}/login?error=github_failed"
+        )
