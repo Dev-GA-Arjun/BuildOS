@@ -16,7 +16,7 @@ def _send_email(to_email: str, to_name: str, subject: str, html: str):
             "Content-Type": "application/json",
         },
         json={
-            "sender": {"name": "BuildOS", "email": "noreply@shipwithbuildos.com"},
+            "sender": {"name": "BuildOS", "email": "g.a.arjun00@gmail.com"},
             "to": [{"email": to_email, "name": to_name}],
             "subject": subject,
             "htmlContent": html,
