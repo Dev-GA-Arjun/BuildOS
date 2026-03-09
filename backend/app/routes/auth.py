@@ -232,7 +232,6 @@ def me(current_user: User = Depends(get_current_user)) -> User:
 
 @router.get("/google")
 def google_login():
-    """Redirect user to Google OAuth consent screen."""
     params = {
         "client_id": settings.google_client_id,
         "redirect_uri": f"{settings.frontend_url.rstrip('/')}/auth/google/callback",
@@ -243,12 +242,9 @@ def google_login():
     query = "&".join(f"{k}={v}" for k, v in params.items())
     return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{query}")
 
-
 @router.get("/google/callback")
 def google_callback(code: str, db: Session = Depends(get_db)):
-    """Handle Google OAuth callback — exchange code for token."""
     try:
-        # Exchange code for tokens
         token_res = httpx.post(
             "https://oauth2.googleapis.com/token",
             data={
@@ -261,38 +257,27 @@ def google_callback(code: str, db: Session = Depends(get_db)):
         )
         token_data = token_res.json()
         access_token = token_data.get("access_token")
-
         if not access_token:
-            raise HTTPException(status_code=400, detail="Failed to get access token from Google")
+            raise HTTPException(status_code=400, detail="Failed to get token from Google")
 
-        # Get user info
         user_res = httpx.get(
             "https://www.googleapis.com/oauth2/v2/userinfo",
             headers={"Authorization": f"Bearer {access_token}"},
         )
         user_info = user_res.json()
-
         email = user_info.get("email")
         full_name = user_info.get("name", email)
-
         if not email:
             raise HTTPException(status_code=400, detail="Could not get email from Google")
 
         user = get_or_create_oauth_user(db, email, full_name, "google")
         jwt_token = create_access_token(subject=user.email)
-
-        # Redirect to frontend with token
-        return RedirectResponse(
-            f"{settings.frontend_url.rstrip('/')}/oauth/callback?token={jwt_token}"
-        )
+        return {"token": jwt_token}
 
     except HTTPException:
         raise
-    except Exception as e:
-        return RedirectResponse(
-            f"{settings.frontend_url.rstrip('/')}/login?error=google_failed"
-        )
-
+    except Exception:
+        raise HTTPException(status_code=400, detail="Google OAuth failed")
 
 # ── GitHub OAuth ──────────────────────────────────────────────────────────────
 

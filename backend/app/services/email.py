@@ -1,18 +1,37 @@
-import resend
+import httpx
 from app.core.config import get_settings
 
 settings = get_settings()
-resend.api_key = settings.resend_api_key
 
-FROM_EMAIL = "BuildOS <onboarding@resend.dev>"  # use this for testing; replace with your domain after deployment
+FROM_EMAIL = "BuildOS <noreply@shipwithbuildos.com>"
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+
+
+def _send_email(to_email: str, to_name: str, subject: str, html: str):
+    """Send email via Brevo API."""
+    response = httpx.post(
+        BREVO_API_URL,
+        headers={
+            "api-key": settings.brevo_api_key,
+            "Content-Type": "application/json",
+        },
+        json={
+            "sender": {"name": "BuildOS", "email": "noreply@shipwithbuildos.com"},
+            "to": [{"email": to_email, "name": to_name}],
+            "subject": subject,
+            "htmlContent": html,
+        },
+    )
+    if response.status_code not in (200, 201):
+        raise Exception(f"Brevo email failed: {response.status_code} {response.text}")
 
 
 def send_verification_email(to_email: str, full_name: str, otp: str):
-    resend.Emails.send({
-        "from": FROM_EMAIL,
-        "to": to_email,
-        "subject": "Verify your BuildOS account",
-        "html": f"""
+    _send_email(
+        to_email=to_email,
+        to_name=full_name,
+        subject="Verify your BuildOS account",
+        html=f"""
         <div style="font-family: monospace; background: #0F172A; color: #e2e8f0; padding: 40px; border-radius: 12px; max-width: 500px;">
             <h2 style="color: #33C228; margin-bottom: 8px;">⚡ BuildOS</h2>
             <p style="color: #94a3b8; margin-bottom: 24px;">Hey {full_name}, verify your email to start building.</p>
@@ -23,16 +42,16 @@ def send_verification_email(to_email: str, full_name: str, otp: str):
             <p style="color: #64748b; font-size: 12px;">This code expires in 15 minutes. If you didn't create a BuildOS account, ignore this email.</p>
         </div>
         """
-    })
+    )
 
 
 def send_reset_email(to_email: str, full_name: str, reset_token: str):
     reset_url = f"{settings.frontend_url}/reset-password?token={reset_token}"
-    resend.Emails.send({
-        "from": FROM_EMAIL,
-        "to": to_email,
-        "subject": "Reset your BuildOS password",
-        "html": f"""
+    _send_email(
+        to_email=to_email,
+        to_name=full_name,
+        subject="Reset your BuildOS password",
+        html=f"""
         <div style="font-family: monospace; background: #0F172A; color: #e2e8f0; padding: 40px; border-radius: 12px; max-width: 500px;">
             <h2 style="color: #33C228; margin-bottom: 8px;">⚡ BuildOS</h2>
             <p style="color: #94a3b8; margin-bottom: 24px;">Hey {full_name}, here's your password reset link.</p>
@@ -42,4 +61,4 @@ def send_reset_email(to_email: str, full_name: str, reset_token: str):
             <p style="color: #64748b; font-size: 12px;">This link expires in 30 minutes. If you didn't request this, ignore this email.</p>
         </div>
         """
-    })
+    )

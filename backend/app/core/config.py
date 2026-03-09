@@ -15,7 +15,9 @@ class Settings(BaseSettings):
 
     openrouter_api_key: str = ""
     resend_api_key: str = ""
+    brevo_api_key: str = ""
     frontend_url: str = "http://localhost:5173"
+    backend_url: str = "https://buildos-gb8n.onrender.com"
 
     # OAuth
     google_client_id: str = ""
