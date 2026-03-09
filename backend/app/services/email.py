@@ -3,7 +3,7 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-FROM_EMAIL = "BuildOS <noreply@shipwithbuildos.com>"
+FROM_EMAIL = "BuildOS <g.a.arjun00@gmail.com>"
 BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 
 
