@@ -11,6 +11,9 @@ import ProjectPage from './pages/ProjectPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import SettingsPage from './pages/Settings'
+import ProfilePage from './pages/Profile'
+import GitHubCallbackPage from './pages/GitHubCallbackPage'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -45,6 +48,10 @@ function AppRoutes() {
       <Route path="/projects/new" element={<ProtectedRoute><NewProjectPage /></ProtectedRoute>} />
       <Route path="/projects/:id" element={<ProtectedRoute><ProjectPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      
+      <Route path="/github/callback" element={<ProtectedRoute><GitHubCallbackPage /></ProtectedRoute>} />
     </Routes>
   )
 }

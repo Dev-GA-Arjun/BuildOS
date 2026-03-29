@@ -10,7 +10,6 @@ import {
 } from '../api/projects'
 import { evaluateProject, generatePlan, validateProject } from '../api/ai'
 
-// ── Fetch active project ──────────────────────────────────
 export function useActiveProject() {
   return useQuery({
     queryKey: ['project', 'active'],
@@ -19,7 +18,6 @@ export function useActiveProject() {
   })
 }
 
-// ── Fetch all projects ────────────────────────────────────
 export function useProjects() {
   return useQuery({
     queryKey: ['projects'],
@@ -27,7 +25,6 @@ export function useProjects() {
   })
 }
 
-// ── Fetch single project ──────────────────────────────────
 export function useProject(id) {
   return useQuery({
     queryKey: ['project', id],
@@ -36,7 +33,6 @@ export function useProject(id) {
   })
 }
 
-// ── Create project ────────────────────────────────────────
 export function useCreateProject() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -47,7 +43,6 @@ export function useCreateProject() {
   })
 }
 
-// ── AI Evaluate ───────────────────────────────────────────
 export function useEvaluateProject() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -58,7 +53,6 @@ export function useEvaluateProject() {
   })
 }
 
-// ── AI Generate Plan ──────────────────────────────────────
 export function useGeneratePlan() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -71,7 +65,6 @@ export function useGeneratePlan() {
   })
 }
 
-// ── AI Validate ───────────────────────────────────────────
 export function useValidateProject() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -84,19 +77,19 @@ export function useValidateProject() {
   })
 }
 
-// ── Abandon project ───────────────────────────────────────
 export function useAbandonProject() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (projectId) => abandonProject(projectId).then(r => r.data),
     onSuccess: () => {
+      // Invalidate everything so dashboard shows correct state immediately
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       queryClient.invalidateQueries({ queryKey: ['project', 'active'] })
+      queryClient.removeQueries({ queryKey: ['project', 'active'] })
     },
   })
 }
 
-// ── Delete project ────────────────────────────────────────
 export function useDeleteProject() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -104,6 +97,7 @@ export function useDeleteProject() {
     mutationFn: (projectId) => deleteProject(projectId).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
+      queryClient.invalidateQueries({ queryKey: ['project', 'active'] })
       navigate('/dashboard')
     },
   })

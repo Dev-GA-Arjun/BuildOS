@@ -1,0 +1,178 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  padding: 4rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.fullscreen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-primary);
+  z-index: 100;
+  padding: 0;
+}
+
+.bgGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(51, 194, 40, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(51, 194, 40, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  animation: gridDrift 8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes gridDrift {
+  0% { background-position: 0 0; }
+  100% { background-position: 32px 32px; }
+}
+
+.centerStack {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+}
+
+.ring1 {
+  width: 52px;
+  height: 52px;
+  opacity: 0.5;
+  animation: ringPulse 2s ease-in-out infinite;
+}
+
+.ring2 {
+  width: 72px;
+  height: 72px;
+  opacity: 0.25;
+  animation: ringPulse 2s ease-in-out infinite 0.4s;
+}
+
+.ring3 {
+  width: 96px;
+  height: 96px;
+  opacity: 0.1;
+  animation: ringPulse 2s ease-in-out infinite 0.8s;
+}
+
+@keyframes ringPulse {
+  0%, 100% { transform: scale(1); opacity: inherit; }
+  50% { transform: scale(1.06); opacity: 0.15; }
+}
+
+.core {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: var(--bg-card);
+  border: 1px solid rgba(51, 194, 40, 0.4);
+  border-radius: 8px;
+  padding: 0.35rem 0.55rem;
+  animation: coreBreathe 2s ease-in-out infinite;
+}
+
+@keyframes coreBreathe {
+  0%, 100% { box-shadow: 0 0 8px rgba(51, 194, 40, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(51, 194, 40, 0.6), 0 0 40px rgba(51, 194, 40, 0.2); }
+}
+
+.coreBracket {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.coreSlash {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.labelTag {
+  color: var(--accent);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.labelSep {
+  color: var(--text-muted);
+}
+
+.labelContext {
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.message {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.03em;
+  transition: opacity 0.35s ease;
+  text-align: center;
+  min-height: 1.2em;
+}
+
+.visible { opacity: 1; }
+.hidden { opacity: 0; }
+
+.dotsWrap {
+  display: inline-flex;
+  gap: 1px;
+  margin-left: 2px;
+}
+
+.dot {
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.dotOn { color: var(--accent); }
+
+.progressTrack {
+  width: 180px;
+  height: 2px;
+  background: var(--bg-card);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 1px;
+  animation: progressSweep 2.4s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--accent);
+}
+
+@keyframes progressSweep {
+  0% { width: 0%; margin-left: 0%; }
+  50% { width: 60%; margin-left: 20%; }
+  100% { width: 0%; margin-left: 100%; }
+}

@@ -19,12 +19,8 @@ console.log(
   'background: #33C228; color: #0F172A; font-size: 16px; font-weight: bold; padding: 6px 14px; border-radius: 6px;'
 )
 console.log(
-  '%c Vibe coded by G A Arjun',
+  '%c Vibe coded by KSqaud128',
   'color: #33C228; font-size: 12px; padding: 2px 0;'
-)
-console.log(
-  '%c linkedin.com/in/gaarjun',
-  'color: #64748b; font-size: 11px; padding: 2px 0;'
 )
 
 createRoot(document.getElementById('root')).render(

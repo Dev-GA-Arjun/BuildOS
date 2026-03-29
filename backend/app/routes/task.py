@@ -1,5 +1,6 @@
 from datetime import date, datetime, timezone
-
+from app.routes.user import get_decrypted_user_key
+from app.services.ai import verify_task_completion
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
@@ -154,3 +155,52 @@ def delete_subtask(
     db.delete(subtask)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.post("/{task_id}/complete", response_model=TaskRead)
+def complete_task_with_proof(
+    task_id: int,
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Task:
+    """AI-verified manual task completion. User provides proof of what they built."""
+    task = get_task_for_user(task_id, current_user, db)
+
+    if task.status == TaskStatus.DONE:
+        raise HTTPException(status_code=400, detail="Task already completed")
+
+    proof = payload.get("proof", "").strip()
+    if not proof or len(proof) < 20:
+        raise HTTPException(
+            status_code=400,
+            detail="Please describe what you built in at least 20 characters"
+        )
+
+    user_key = get_decrypted_user_key(current_user)
+
+    try:
+        result = verify_task_completion(
+            task_title=task.title,
+            task_description=task.description,
+            proof=proof,
+            user_key=user_key,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI verification failed: {str(e)}")
+
+    if not result.get("verified"):
+        raise HTTPException(
+            status_code=422,
+            detail=result.get("feedback", "AI could not verify completion. Add more detail.")
+        )
+
+    task.status = TaskStatus.DONE
+    task.completed_at = datetime.now(timezone.utc)
+    task.completed_via = "manual_verified"
+    task.completion_proof = proof
+    log_activity(current_user.id, db, tasks_delta=1)
+
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    return task

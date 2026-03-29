@@ -473,3 +473,81 @@
   box-shadow: var(--accent-glow);
   text-shadow: none;
 }
+
+/* ── Visibility fixes ─────────────────── */
+.statLabel {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+}
+
+.statUnit {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+.cardSub {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+}
+
+/* ── Chess.com style streak ───────────── */
+.streakCard {
+  border-color: rgba(255, 140, 0, 0.25);
+  background: var(--bg-card);
+}
+
+.streakCard:hover {
+  border-color: rgba(255, 140, 0, 0.4);
+}
+
+.streakFireWrap {
+  position: relative;
+  width: 36px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Flame SVG — lit when streak > 0 */
+.flameLit {
+  width: 32px;
+  height: 40px;
+  animation: flameDance 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes flameDance {
+  0% { transform: scaleY(1) scaleX(1); }
+  50% { transform: scaleY(1.06) scaleX(0.96); }
+  100% { transform: scaleY(0.97) scaleX(1.03); }
+}
+
+/* Flame — dark/off when streak is 0 */
+.flameDark {
+  width: 32px;
+  height: 40px;
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+.streakNum {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.streakNumActive {
+  color: #ff8c00;
+}
+
+.streakUnit {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+}

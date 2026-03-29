@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { FaGithub, FaGoogle } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
 import { login, getMe } from '../api/auth'
+import Loader from '../components/Loader'
 import styles from './LoginPage.module.css'
 
 export default function LoginPage() {
@@ -15,16 +16,10 @@ export default function LoginPage() {
 
   const validateForm = () => {
     const newErrors = {}
-    if (!formData.email) {
-      newErrors.email = 'Email is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email'
-    }
-    if (!formData.password) {
-      newErrors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
-    }
+    if (!formData.email) newErrors.email = 'Email is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Enter a valid email'
+    if (!formData.password) newErrors.password = 'Password is required'
+    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -48,18 +43,17 @@ export default function LoginPage() {
       navigate('/dashboard')
     } catch (error) {
       const detail = error.response?.data?.detail
-
-      // ✅ Handle unverified email — redirect to verify page
       if (detail === 'EMAIL_NOT_VERIFIED') {
         navigate('/verify-email', { state: { email: formData.email } })
         return
       }
-
       setErrors({ submit: error.friendlyMessage || detail || 'Invalid email or password.' })
     } finally {
       setIsLoading(false)
     }
   }
+
+  if (isLoading) return <Loader context="login" fullscreen />
 
   return (
     <div className={styles.wrapper}>
@@ -85,7 +79,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             {errors.submit && (
-              <div className={styles.errorMessage}><span>⚠️</span> {errors.submit}</div>
+              <div className={styles.errorMessage}>{errors.submit}</div>
             )}
 
             <div className={styles.formGroup}>
@@ -114,9 +108,25 @@ export default function LoginPage() {
                   className={`${styles.input} ${errors.password ? styles.inputError : ''}`}
                   disabled={isLoading}
                 />
-                <button type="button" className={styles.togglePassword}
-                  onClick={() => setShowPassword(!showPassword)} disabled={isLoading}>
-                  {showPassword ? '🙈' : '👁️'}
+                <button
+                  type="button"
+                  className={styles.togglePassword}
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" stroke="currentColor" strokeWidth="1.5"/>
+                      <circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M2 2l14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" stroke="currentColor" strokeWidth="1.5"/>
+                      <circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+                    </svg>
+                  )}
                 </button>
               </div>
               {errors.password && <span className={styles.fieldError}>{errors.password}</span>}
@@ -130,7 +140,7 @@ export default function LoginPage() {
             </div>
 
             <button type="submit" className={styles.submitBtn} disabled={isLoading}>
-              {isLoading ? <><span className={styles.spinner} /> Signing in...</> : 'Sign In'}
+              Sign In
             </button>
 
             <div className={styles.divider}>or continue with</div>

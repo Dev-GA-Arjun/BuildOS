@@ -17,10 +17,7 @@ function calcProgress(project) {
   if (!project?.phases) return 0
   let total = 0, done = 0
   project.phases.forEach(p => p.tasks?.forEach(t => {
-    t.subtasks?.forEach(s => {
-      total++
-      if (s.status === 'done') done++
-    })
+    t.subtasks?.forEach(s => { total++; if (s.status === 'done') done++ })
   }))
   return total === 0 ? 0 : Math.round((done / total) * 100)
 }
@@ -39,20 +36,10 @@ function generateDays() {
 function calcStreak(activityData) {
   const today = new Date()
   const todayKey = today.toISOString().split('T')[0]
-
-  // Check if user has done anything today
   const todayEntry = activityData[todayKey]
-  const workedToday = todayEntry
-    ? (todayEntry.subtasks_completed + todayEntry.tasks_completed) > 0
-    : false
-
+  const workedToday = todayEntry ? (todayEntry.subtasks_completed + todayEntry.tasks_completed) > 0 : false
   let streak = 0
-
-  // If nothing done today AND nothing done yesterday → streak is 0
-  // If nothing done today but worked yesterday → streak is still counting from yesterday
-  // Start from today if worked today, otherwise start from yesterday
   const startOffset = workedToday ? 0 : 1
-
   for (let i = startOffset; i < 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
@@ -62,7 +49,6 @@ function calcStreak(activityData) {
     if (count > 0) streak++
     else break
   }
-
   return streak
 }
 
@@ -73,7 +59,6 @@ export default function DashboardPage() {
   const { data: allProjects, isLoading: loadingProjects } = useProjects()
   const location = useLocation()
 
-  // ✅ Re-fetch activity every time dashboard is visited
   useEffect(() => {
     apiClient.get('/activity/')
       .then(res => setActivityData(res.data))
@@ -94,10 +79,28 @@ export default function DashboardPage() {
           <div className={`${styles.statCard} ${styles.streakCard}`}>
             <span className={styles.statLabel}>Current Streak</span>
             <div className={styles.streakValue}>
-              <div className={styles.streakFire}>🔥</div>
+              <div className={styles.streakFireWrap}>
+                {streak > 0 ? (
+                  <svg className={styles.flameLit} viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 2C16 2 20 8 20 13C20 13 23 10 22 6C22 6 28 11 28 19C28 27 22.6 34 16 34C9.4 34 4 27 4 19C4 14 7 9 10 6C10 6 9 11 12 13C12 8 16 2 16 2Z" fill="url(#flameGrad)" />
+                    <path d="M16 18C16 18 18 21 18 24C18 26.2 17.1 28 16 28C14.9 28 14 26.2 14 24C14 21 16 18 16 18Z" fill="#FFF3" />
+                    <defs>
+                      <linearGradient id="flameGrad" x1="16" y1="2" x2="16" y2="34" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#FFD700" />
+                        <stop offset="40%" stopColor="#FF8C00" />
+                        <stop offset="100%" stopColor="#FF4500" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                ) : (
+                  <svg className={styles.flameDark} viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 2C16 2 20 8 20 13C20 13 23 10 22 6C22 6 28 11 28 19C28 27 22.6 34 16 34C9.4 34 4 27 4 19C4 14 7 9 10 6C10 6 9 11 12 13C12 8 16 2 16 2Z" fill="#475569" />
+                  </svg>
+                )}
+              </div>
               <div className={styles.streakInfo}>
-                <span className={styles.streakNum}>{streak}</span>
-                <span className={styles.streakUnit}>{streak === 1 ? 'Day' : 'Days'}</span>
+                <span className={`${styles.streakNum} ${streak > 0 ? styles.streakNumActive : ''}`}>{streak}</span>
+                <span className={styles.streakUnit}>{streak === 1 ? 'day' : 'days'}</span>
               </div>
             </div>
           </div>
@@ -130,14 +133,14 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 {activeProject && (
-                  <Link to={`/projects/${activeProject.id}`} className={styles.viewBtn}>View →</Link>
+                  <Link to={`/projects/${activeProject.id}`} className={styles.viewBtn}>View</Link>
                 )}
               </div>
 
               {!activeProject && !loadingActive && (
                 <div className={styles.emptyState}>
-                  <p className={styles.emptyText}>You have no active project.</p>
-                  <Link to="/projects/new" className={styles.emptyBtn}>⚡ Start a New Project</Link>
+                  <p className={styles.emptyText}>No active project yet.</p>
+                  <Link to="/projects/new" className={styles.emptyBtn}>Start a New Project</Link>
                 </div>
               )}
 
@@ -161,10 +164,10 @@ export default function DashboardPage() {
                             onClick={() => setExpandedPhase(isOpen ? null : phase.id)}
                           >
                             <div className={styles.phaseLeft}>
-                              <span className={styles.phaseIcon}>{phaseDone ? '✅' : phaseActive ? '⚡' : '○'}</span>
+                              <span className={`${styles.phaseIndicator} ${phaseDone ? styles.indicatorDone : phaseActive ? styles.indicatorActive : styles.indicatorTodo}`} />
                               <span className={styles.phaseTitle}>{phase.title}</span>
                             </div>
-                            <span className={styles.phaseChevron}>{isOpen ? '▾' : '▸'}</span>
+                            <span className={styles.phaseChevron}>{isOpen ? '−' : '+'}</span>
                           </div>
                           {isOpen && (
                             <div className={styles.taskList}>
@@ -241,10 +244,10 @@ export default function DashboardPage() {
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>Quick Actions</h2>
               <div className={styles.actions}>
-                <Link to="/projects/new" className={styles.actionBtn}><span>⚡</span> New Project</Link>
+                <Link to="/projects/new" className={styles.actionBtn}>New Project</Link>
                 {activeProject && (
                   <Link to={`/projects/${activeProject.id}`} className={styles.actionBtnSecondary}>
-                    <span>📋</span> View Active Project
+                    View Active Project
                   </Link>
                 )}
               </div>

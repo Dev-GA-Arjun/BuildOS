@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import AppLayout from '../components/layout/AppLayout'
 import { useProject, useValidateProject, useAbandonProject } from '../hooks/useProjects'
 import { useUpdateSubtask } from '../hooks/useTask'
 import styles from './ProjectPage.module.css'
+import { getCommits, linkRepo, unlinkRepo, listRepos, completeTaskWithProof } from '../api/github'
+
 
 function calcProgress(project) {
   if (!project?.phases) return 0
@@ -148,6 +150,241 @@ function AbandonModal({ project, onConfirm, onCancel, isPending }) {
   )
 }
 
+// ── Proof Modal ────────────────────────────────────────────
+function ProofModal({ task, onClose, onVerified }) {
+  const [proof, setProof] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleSubmit = async () => {
+    if (proof.trim().length < 20) {
+      setError('Please describe what you built in more detail.')
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      await completeTaskWithProof(task.id, proof)
+      onVerified()
+      onClose()
+    } catch (err) {
+      setError(err.response?.data?.detail || err.friendlyMessage || 'Verification failed.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.proofModal} onClick={e => e.stopPropagation()}>
+        <h2 className={styles.proofTitle}>Mark Task as Done</h2>
+        <p className={styles.proofSub}>
+          <strong>{task.title}</strong>
+        </p>
+        <p className={styles.proofHint}>
+          Describe what you built. AI will verify before marking done.
+        </p>
+        <textarea
+          className={styles.proofTextarea}
+          value={proof}
+          onChange={e => setProof(e.target.value)}
+          placeholder="e.g. Built the useAuth hook in src/hooks/useAuth.js — handles JWT storage and token refresh. Connected to the login form."
+          rows={5}
+        />
+        {error && <p className={styles.proofError}>{error}</p>}
+        <div className={styles.proofActions}>
+          <button className={styles.secondaryBtnSm} onClick={onClose} disabled={loading}>
+            Cancel
+          </button>
+          <button
+            className={styles.primaryBtnSm}
+            onClick={handleSubmit}
+            disabled={loading || proof.trim().length < 20}
+          >
+            {loading ? 'AI is verifying...' : 'Verify & Complete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── GitHub Panel ───────────────────────────────────────────
+function GitHubPanel({ project, onRepoLinked }) {
+  const [commits, setCommits] = useState([])
+  const [repos, setRepos] = useState([])
+  const [selectedRepo, setSelectedRepo] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [linking, setLinking] = useState(false)
+  const [showRepoSelect, setShowRepoSelect] = useState(false)
+  const [error, setError] = useState(null)
+  const [isGitHubConnected, setIsGitHubConnected] = useState(null) // null = checking, true/false = checked
+
+  useEffect(() => {
+    if (project.github_repo) {
+      getCommits(project.id)
+        .then(res => setCommits(res.data.commits || []))
+        .catch(() => setCommits([]))
+    }
+  }, [project.id, project.github_repo])
+
+  // Check if GitHub is connected on mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        await listRepos()
+        setIsGitHubConnected(true)
+      } catch {
+        setIsGitHubConnected(false)
+      }
+    }
+    if (!project.github_repo) {
+      checkConnection()
+    }
+  }, [project.id, project.github_repo])
+
+  const handleLoadRepos = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await listRepos()
+      setRepos(res.data.repos || [])
+      setShowRepoSelect(true)
+    } catch (err) {
+      setError(err.friendlyMessage || 'Failed to load repos.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleLinkRepo = async () => {
+    if (!selectedRepo) return
+    setLinking(true)
+    setError(null)
+    try {
+      await linkRepo(project.id, selectedRepo, 'main')
+      setShowRepoSelect(false)
+      onRepoLinked()
+    } catch (err) {
+      setError(err.friendlyMessage || 'Failed to link repo.')
+    } finally {
+      setLinking(false)
+    }
+  }
+
+  const handleUnlink = async () => {
+    try {
+      await unlinkRepo(project.id)
+      onRepoLinked()
+    } catch {
+      setError('Failed to unlink repo.')
+    }
+  }
+
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  }
+
+  return (
+    <div className={styles.infoCard}>
+      <div className={styles.githubHeader}>
+        <h3 className={styles.colTitle}>GitHub</h3>
+        {project.github_repo && (
+          <button className={styles.unlinkBtn} onClick={handleUnlink}>Unlink</button>
+        )}
+      </div>
+
+      {error && <p className={styles.githubError}>{error}</p>}
+
+      {/* Not connected */}
+      {!project.github_repo && !showRepoSelect && isGitHubConnected === false && (
+        <div className={styles.githubEmpty}>
+          <p className={styles.githubEmptyText}>Connect GitHub in Settings to link repos and auto-track commits.</p>
+          <a href="/settings" className={styles.githubBtn} style={{ display: 'inline-block', textAlign: 'center' }}>
+            Go to Settings →
+          </a>
+        </div>
+      )}
+
+      {/* Connected - show repo selector */}
+      {!project.github_repo && !showRepoSelect && isGitHubConnected === true && (
+        <div className={styles.githubEmpty}>
+          <p className={styles.githubEmptyText}>Link a repo to auto-track commits.</p>
+          <button className={styles.githubBtn} onClick={handleLoadRepos} disabled={loading}>
+            {loading ? 'Loading...' : 'Select Repo'}
+          </button>
+        </div>
+      )}
+
+      {/* Repo selector */}
+      {showRepoSelect && (
+        <div className={styles.repoSelect}>
+          <select
+            className={styles.repoDropdown}
+            value={selectedRepo}
+            onChange={e => setSelectedRepo(e.target.value)}
+          >
+            <option value="">Select a repository...</option>
+            {repos.map(r => (
+              <option key={r.full_name} value={r.full_name}>
+                {r.full_name} {r.private ? '(private)' : ''}
+              </option>
+            ))}
+          </select>
+          <div className={styles.repoActions}>
+            <button className={styles.githubBtnOutline} onClick={() => setShowRepoSelect(false)}>
+              Cancel
+            </button>
+            <button
+              className={styles.githubBtn}
+              onClick={handleLinkRepo}
+              disabled={!selectedRepo || linking}
+            >
+              {linking ? 'Linking...' : 'Link Repo'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Linked repo + commits */}
+      {project.github_repo && (
+        <>
+          <div className={styles.repoLinked}>
+            <span className={styles.repoName}>{project.github_repo}</span>
+            <span className={styles.repoBranch}>{project.github_branch || 'main'}</span>
+          </div>
+
+          {commits.length === 0 ? (
+            <p className={styles.githubEmptyText} style={{ marginTop: '0.75rem' }}>
+              No commits yet. Push to {project.github_branch || 'main'} to start tracking.
+            </p>
+          ) : (
+            <div className={styles.commitList}>
+              {commits.map((c) => (
+                <a
+                  key={c.full_sha}
+                  href={c.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.commitItem}
+                >
+                  <div className={styles.commitTop}>
+                    <span className={styles.commitSha}>{c.sha}</span>
+                    <span className={styles.commitDate}>{formatDate(c.date)}</span>
+                  </div>
+                  <p className={styles.commitMsg}>{c.message}</p>
+                  <span className={styles.commitAuthor}>{c.author}</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 // ── Main Page ─────────────────────────────────────────────
 export default function ProjectPage() {
   const { id } = useParams()
@@ -158,7 +395,7 @@ export default function ProjectPage() {
   const [shipModal, setShipModal] = useState(false)
   const [abandonModal, setAbandonModal] = useState(false)
   const [validationReport, setValidationReport] = useState(null)
-
+  const [proofModal, setProofModal] = useState(null) // holds task object
   const { data: project, isLoading } = useProject(id)
   const validateMutation = useValidateProject()
   const abandonMutation = useAbandonProject()
@@ -179,6 +416,10 @@ export default function ProjectPage() {
       subtaskId,
       data: { status: currentStatus === 'done' ? 'todo' : 'done' }
     })
+  }
+
+  const handleProofVerified = () => {
+    queryClient.invalidateQueries({ queryKey: ['project', id] })
   }
 
   const handleValidate = async () => {
@@ -238,6 +479,14 @@ export default function ProjectPage() {
             onConfirm={handleAbandon}
             onCancel={() => setAbandonModal(false)}
             isPending={abandonMutation.isPending}
+          />
+        )}
+
+        {proofModal && (
+          <ProofModal
+            task={proofModal}
+            onClose={() => setProofModal(null)}
+            onVerified={handleProofVerified}
           />
         )}
 
@@ -383,6 +632,17 @@ export default function ProjectPage() {
                         <span className={styles.taskProgress}>{doneSubs}/{totalSubs}</span>
                         <span className={styles.chevron}>{isOpen ? '▾' : '▸'}</span>
                       </div>
+                      {!allDone && task.completed_via !== 'github' && (
+                        <button
+                          className={styles.markDoneBtn}
+                          onClick={(e) => { e.stopPropagation(); setProofModal(task) }}
+                        >
+                          Mark Done
+                        </button>
+                      )}
+                      {task.github_commit_sha && (
+                        <span className={styles.commitBadge}>{task.github_commit_sha}</span>
+                      )}
                     </div>
                     {isOpen && (
                       <div className={styles.subtaskList}>
@@ -405,12 +665,6 @@ export default function ProjectPage() {
           </div>
 
           <div className={styles.infoCol}>
-            {project.ai_evaluation && (
-              <div className={styles.infoCard}>
-                <h3 className={styles.colTitle}>AI Evaluation</h3>
-                <p className={styles.infoText}>{project.ai_evaluation}</p>
-              </div>
-            )}
             {project.missing_skills && (
               <div className={styles.infoCard}>
                 <h3 className={styles.colTitle}>Skills to Learn</h3>
@@ -421,33 +675,18 @@ export default function ProjectPage() {
                 </div>
               </div>
             )}
-            <div className={styles.infoCard}>
-              <h3 className={styles.colTitle}>Project Stats</h3>
-              <div className={styles.statsList}>
-                <div className={styles.statRow}>
-                  <span className={styles.statKey}>Status</span>
-                  <span className={styles.statVal} style={{ color: 'var(--accent)' }}>{project.status} ⚡</span>
-                </div>
-                <div className={styles.statRow}>
-                  <span className={styles.statKey}>Timeline</span>
-                  <span className={styles.statVal}>{project.deadline_weeks} weeks</span>
-                </div>
-                <div className={styles.statRow}>
-                  <span className={styles.statKey}>Progress</span>
-                  <span className={styles.statVal}>{progress}%</span>
-                </div>
-                <div className={styles.statRow}>
-                  <span className={styles.statKey}>Started</span>
-                  <span className={styles.statVal}>{project.started_at || '—'}</span>
-                </div>
-                {project.completed_at && (
-                  <div className={styles.statRow}>
-                    <span className={styles.statKey}>Completed</span>
-                    <span className={styles.statVal}>{project.completed_at}</span>
-                  </div>
-                )}
+
+            <GitHubPanel
+              project={project}
+              onRepoLinked={() => queryClient.invalidateQueries({ queryKey: ['project', id] })}
+            />
+
+            {project.ai_evaluation && (
+              <div className={styles.infoCard}>
+                <h3 className={styles.colTitle}>AI Evaluation</h3>
+                <p className={styles.infoText}>{project.ai_evaluation}</p>
               </div>
-            </div>
+            )}
 
             {project.status === 'active' && (
               <button

@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     resend_api_key: str = ""
     brevo_api_key: str = ""
-    frontend_url: str = "http://localhost:5173"
+    frontend_url: str = ""
     backend_url: str = "https://buildos-gb8n.onrender.com"
 
     # OAuth
@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     github_client_id: str = ""
     github_client_secret: str = ""
+
+    # BYOK encryption — generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    byok_encryption_key: str = ""
+    github_webhook_secret: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -6,6 +6,17 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from app.models import ProjectStatus, SubtaskStatus, TaskStatus
 
 
+# ── API Key schemas ───────────────────────────────────────
+
+class APIKeySave(BaseModel):
+    api_key: str = Field(min_length=1)
+
+
+class APIKeyStatus(BaseModel):
+    has_key: bool
+    masked_key: str | None = None
+
+
 # ── Auth schemas ──────────────────────────────────────────
 
 class UserRegister(BaseModel):

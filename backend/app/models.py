@@ -48,6 +48,7 @@ class User(Base):
     otp_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     reset_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     reset_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    openrouter_api_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -57,7 +58,17 @@ class User(Base):
 
     projects: Mapped[list["Project"]] = relationship(back_populates="user")
     activity_logs: Mapped[list["ActivityLog"]] = relationship(back_populates="user")
+    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    bio: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    skills: Mapped[str | None] = mapped_column(Text, nullable=True)
+    github_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    github_access_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    linkedin_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    resume_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # AI call limits
+    ai_calls_today: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    ai_calls_reset_at: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 # ── Project ───────────────────────────────────────────────
 
@@ -77,7 +88,9 @@ class Project(Base):
     ai_evaluation: Mapped[str | None] = mapped_column(Text, nullable=True)   # AI's reasoning
     ai_suggested_weeks: Mapped[int | None] = mapped_column(Integer, nullable=True)  # If timeline too short
     missing_skills: Mapped[str | None] = mapped_column(Text, nullable=True)  # Skills user needs to learn
-
+    github_repo: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    github_webhook_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    github_branch: Mapped[str] = mapped_column(String(100), default="main", nullable=False)
     status: Mapped[ProjectStatus] = mapped_column(
         SAEnum(ProjectStatus, name="project_status", values_callable=lambda x: [e.value for e in x]),
         default=ProjectStatus.DRAFT,
@@ -141,7 +154,9 @@ class Task(Base):
 
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-
+    completed_via: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    completion_proof: Mapped[str | None] = mapped_column(Text, nullable=True)
+    github_commit_sha: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

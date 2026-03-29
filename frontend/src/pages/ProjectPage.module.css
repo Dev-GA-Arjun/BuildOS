@@ -338,6 +338,7 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -610,3 +611,297 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ── GitHub panel ─────────────────────────── */
+
+.githubHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.unlinkBtn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.unlinkBtn:hover { border-color: var(--danger); color: var(--danger); }
+
+.githubEmpty { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.githubEmptyText {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+}
+
+.githubBtns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.githubBtn {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.githubBtn:hover:not(:disabled) { box-shadow: var(--accent-glow-sm); }
+.githubBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.githubBtnOutline {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.githubBtnOutline:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.githubError {
+  font-size: 0.78rem;
+  color: var(--danger);
+  font-family: var(--font-body);
+  margin-bottom: 0.5rem;
+}
+
+.repoSelect { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.repoDropdown {
+  width: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+}
+
+.repoDropdown:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.repoActions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+.repoLinked {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.repoName {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.repoBranch {
+  font-size: 0.7rem;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-hover);
+  color: var(--accent);
+  padding: 0.1rem 0.4rem;
+  border-radius: 100px;
+  font-family: var(--font-mono);
+}
+
+.commitList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.commitItem {
+  display: block;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.commitItem:hover { border-color: var(--border-hover); }
+
+.commitTop {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.2rem;
+}
+
+.commitSha {
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.commitDate {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.commitMsg {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  margin-bottom: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.commitAuthor {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* ── Task mark done + commit badge ───────── */
+
+.markDoneBtn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.markDoneBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.commitBadge {
+  font-size: 0.68rem;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-hover);
+  color: var(--accent);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+/* ── Proof modal ─────────────────────────── */
+
+.proofModal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.proofTitle {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.proofSub {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+}
+
+.proofHint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+}
+
+.proofTextarea {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  font-family: var(--font-body);
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.proofTextarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(51, 194, 40, 0.08);
+}
+
+.proofError {
+  font-size: 0.8rem;
+  color: var(--danger);
+  font-family: var(--font-body);
+}
+
+.proofActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.primaryBtnSm {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border: none;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.primaryBtnSm:hover:not(:disabled) { box-shadow: var(--accent-glow-sm); }
+.primaryBtnSm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.secondaryBtnSm {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.secondaryBtnSm:hover { border-color: var(--border-hover); color: var(--text-primary); }
