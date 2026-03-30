@@ -85,7 +85,7 @@ FastAPI Backend
 PostgreSQL (Neon)
 
 AI Layer
-Google Gemini API
+OpenRouter 
 ```
 
 ---
@@ -274,7 +274,7 @@ SECRET_KEY=your_jwt_secret
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 
-GEMINI_API_KEY=your_gemini_api_key
+
 ```
 
 ---
