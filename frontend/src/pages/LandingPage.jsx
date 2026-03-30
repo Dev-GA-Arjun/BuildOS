@@ -58,7 +58,7 @@ export default function LandingPage() {
         </div>
         <div className={styles.navLinks}>
           <Link to="/login" className={styles.navBtnSecondary}>Log in</Link>
-          <Link to="/register" className={styles.navBtn}>Get Started</Link>
+          <Link to="/register" className={styles.navBtn}>Sign up</Link>
         </div>
       </nav>
 
@@ -81,7 +81,7 @@ export default function LandingPage() {
 
         <div className={styles.cta}>
           <Link to="/register" className={styles.ctaPrimary}>
-            Start Building Free
+            Get Started
             <span className={styles.ctaArrow}>→</span>
           </Link>
           <Link to="/login" className={styles.ctaSecondary}>
