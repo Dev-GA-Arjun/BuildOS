@@ -224,8 +224,15 @@ def reset_password(payload: dict, db: Session = Depends(get_db)):
 # ── Me ────────────────────────────────────────────────────────────────────────
 
 @router.get("/me", response_model=UserRead)
-def me(current_user: User = Depends(get_current_user)) -> User:
-    return current_user
+def me(current_user: User = Depends(get_current_user)) -> dict:
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "is_active": current_user.is_active,
+        "created_at": current_user.created_at,
+        "has_github": bool(current_user.github_access_token),
+    }
 
 
 # ── Google OAuth ──────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import apiClient from '../api/client'
-import { connectGitHub, githubCallback } from '../api/github'
+import { connectGitHub } from '../api/github'
 import styles from './Settings.module.css'
 
 export default function SettingsPage() {
@@ -24,24 +24,30 @@ export default function SettingsPage() {
       .catch(() => setKeyStatus({ has_key: false, masked_key: null }))
   }, [])
 
+  // Set github status from user object
   useEffect(() => {
     if (user) {
-      setGithubStatus(user.github_access_token ? 'connected' : 'disconnected')
+      setGithubStatus(user.has_github ? 'connected' : 'disconnected')
     }
   }, [user])
 
-  // Handle GitHub OAuth callback code
+  // Re-fetch user when returning from GitHub OAuth callback
   useEffect(() => {
-    const code = searchParams.get('github_code')
-    if (!code) return
-    githubCallback(code)
-      .then(async () => {
-        await refreshUser()
+    const connected = searchParams.get('github_connected')
+    const error = searchParams.get('github_error')
+
+    if (connected === 'true') {
+      refreshUser().then(() => {
         setMessage({ type: 'success', text: 'GitHub connected successfully.' })
         window.history.replaceState({}, '', '/settings')
       })
-      .catch(() => setMessage({ type: 'error', text: 'GitHub connection failed. Try again.' }))
-  }, [searchParams, refreshUser])
+    }
+
+    if (error === 'true') {
+      setMessage({ type: 'error', text: 'GitHub connection failed. Try again.' })
+      window.history.replaceState({}, '', '/settings')
+    }
+  }, [searchParams])
 
   const handleGitHubConnect = async () => {
     setConnectingGitHub(true)

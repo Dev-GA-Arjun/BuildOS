@@ -37,6 +37,7 @@ class UserRead(BaseModel):
     full_name: str
     is_active: bool
     created_at: datetime
+    has_github: bool = False
 
 
 class TokenRead(BaseModel):
